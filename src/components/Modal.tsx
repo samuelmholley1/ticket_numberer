@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 
 interface ModalProps {
@@ -24,6 +24,56 @@ export default function Modal({
   confirmText = 'OK',
   cancelText = 'Cancel'
 }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Focus trap and accessibility
+  useEffect(() => {
+    if (isOpen) {
+      // Store the currently focused element
+      previousFocusRef.current = document.activeElement as HTMLElement
+
+      // Focus the modal
+      setTimeout(() => {
+        modalRef.current?.focus()
+      }, 100)
+
+      // Focus trap
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Tab') {
+          const modal = modalRef.current
+          if (!modal) return
+
+          const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+          const firstElement = focusableElements[0] as HTMLElement
+          const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              lastElement.focus()
+              e.preventDefault()
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              firstElement.focus()
+              e.preventDefault()
+            }
+          }
+        }
+      }
+
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    } else {
+      // Restore focus when closing
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus()
+      }
+    }
+  }, [isOpen])
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -74,16 +124,32 @@ export default function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto"
+      style={{ 
+        animation: isOpen ? 'modalFadeIn 0.2s ease-out' : undefined 
+      }}
+    >
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all">
+        <div 
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          tabIndex={-1}
+          className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
+          style={{
+            animation: isOpen ? 'modalSlideIn 0.2s ease-out' : undefined
+          }}
+        >
           <div className="p-6">
             {/* Logo */}
             <div className="flex justify-center mb-4">
@@ -101,7 +167,10 @@ export default function Modal({
             {getIcon()}
 
             {/* Title */}
-            <h3 className="mt-4 text-center text-lg font-bold text-gray-900">
+            <h3 
+              id="modal-title"
+              className="mt-4 text-center text-lg font-bold text-gray-900"
+            >
               {title}
             </h3>
 
@@ -142,6 +211,30 @@ export default function Modal({
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modalSlideIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

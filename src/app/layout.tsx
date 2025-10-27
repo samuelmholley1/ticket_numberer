@@ -6,7 +6,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Ticket Builder - Batch Export Tool',
+  title: 'Ticket Numberer - Batch Export Tool',
   description: 'Create and export custom tickets in bulk. Generate PNG, JPEG, and PDF tickets with flexible numbering and professional layouts.',
   manifest: '/site.webmanifest'
 }
