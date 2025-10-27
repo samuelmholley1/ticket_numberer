@@ -214,13 +214,27 @@ export function NumberingPreview({
             </p>
 
             <div className="mt-6 space-y-4">
+              {/* Y-axis slider above */}
+              <div className="flex justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-700">Position Y</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={1 - settings.fy} // Invert for correct orientation (0 at top, 1 at bottom)
+                    onChange={(e) => setSettings(prev => ({ ...prev, fy: 1 - parseFloat(e.target.value) }))}
+                    className="w-64 cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
+                </div>
+              </div>
+
               {/* Preview Image with Position Controls */}
               <div className="flex gap-4">
-                {/* Y-axis slider on the left */}
-                <div className="flex flex-col items-center gap-2">
-                  <label className="text-xs font-medium text-gray-700 writing-mode-vertical-rl transform rotate-180">
-                    Position Y
-                  </label>
+                {/* Y-axis slider on the left - aligned with image */}
+                <div className="flex flex-col items-center gap-2" style={{ marginTop: 'auto', marginBottom: 'auto' }}>
                   <input
                     type="range"
                     min="0"
@@ -231,7 +245,6 @@ export function NumberingPreview({
                     className="h-64 cursor-pointer"
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px' }}
                   />
-                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
                 </div>
 
                 {/* Preview image with click/drag positioning */}
@@ -258,15 +271,25 @@ export function NumberingPreview({
                           className="w-full h-auto object-contain pointer-events-none"
                           style={{ maxHeight: '60vh' }}
                         />
-                        {/* Position indicator */}
+                        {/* Position indicator - text box cutout with cursor */}
                         <div
-                          className="absolute w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-lg pointer-events-none"
+                          className="absolute bg-white bg-opacity-90 border-2 border-dashed border-gray-400 rounded px-2 py-1 shadow-lg pointer-events-none flex items-center gap-2"
                           style={{
                             left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
                             top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                             transform: 'translate(-50%, -50%)'
                           }}
-                        />
+                        >
+                          <span className="text-sm font-medium text-gray-700">
+                            {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                          </span>
+                          <span className="text-xs text-blue-600 animate-pulse">👆</span>
+                        </div>
+                        
+                        {/* Cursor hint text */}
+                        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm pointer-events-none">
+                          Click here to adjust position
+                        </div>
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -288,7 +311,6 @@ export function NumberingPreview({
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
                       <span>Position X: {Math.round(settings.fx * 100)}%</span>
-                      <span className="text-gray-400">Click or drag on preview to reposition</span>
                     </div>
                   </div>
                 </div>
