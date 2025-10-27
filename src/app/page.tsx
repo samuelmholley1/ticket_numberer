@@ -244,7 +244,6 @@ export default function TicketBuilder() {
           exportSettings={exportSettings}
           imageSrc={uploadedImage || ''}
           imageDimensions={imageDimensions}
-          position={numberPosition}
         />
       )}
 

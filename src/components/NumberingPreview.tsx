@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { renderTicketToDataUrl, formatTicketNumber } from '@/lib/ticketRenderer'
 
 interface NumberingPreviewProps {
   isOpen: boolean
@@ -18,6 +19,8 @@ export interface ExportSettings {
   numberFormat: string
   ticketWidth: number
   ticketHeight: number
+  fx: number // Normalized x position
+  fy: number // Normalized y position
   fontSize: number
   fontColor: string
   backgroundColor?: string
@@ -45,12 +48,34 @@ export function NumberingPreview({
     numberFormat,
     ticketWidth: imgWidth,
     ticketHeight: imgHeight,
+    fx: position.fx,
+    fy: position.fy,
     fontSize: 48,
     fontColor: '#000000'
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Update settings when image dimensions change
+  useEffect(() => {
+    if (imageDimensions) {
+      setSettings(prev => ({
+        ...prev,
+        ticketWidth: imageDimensions.width,
+        ticketHeight: imageDimensions.height
+      }))
+    }
+  }, [imageDimensions])
+
+  // Update settings when position changes
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      fx: position.fx,
+      fy: position.fy
+    }))
+  }, [position])
 
   useEffect(() => {
     if (isOpen) {
@@ -83,57 +108,23 @@ export function NumberingPreview({
   const generatePreview = async () => {
     setIsGenerating(true)
     try {
-      const canvas = document.createElement('canvas')
-      canvas.width = settings.ticketWidth
-      canvas.height = settings.ticketHeight
-      const ctx = canvas.getContext('2d')!
-
-      const img = new window.Image()
-      img.crossOrigin = 'anonymous'
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve
-        img.onerror = reject
-        img.src = imageSrc
+      // Use the unified ticket renderer
+      const dataUrl = await renderTicketToDataUrl(imageSrc, settings.startNumber, {
+        width: imgWidth,
+        height: imgHeight,
+        fx: position.fx,
+        fy: position.fy,
+        fontSize: settings.fontSize,
+        fontColor: settings.fontColor,
+        numberFormat: settings.numberFormat,
+        startNumber: settings.startNumber
       })
-
-      // Draw the background image at exact dimensions
-      ctx.drawImage(img, 0, 0, settings.ticketWidth, settings.ticketHeight)
-
-      // Draw the number using normalized coordinates
-      ctx.fillStyle = settings.fontColor
-      ctx.font = `bold ${settings.fontSize}px Arial`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-
-      // Convert normalized position to absolute pixels
-      const x = Math.round(position.fx * settings.ticketWidth)
-      const y = Math.round(position.fy * settings.ticketHeight)
-
-      // Format the preview number
-      const previewNumber = formatNumber(settings.startNumber, settings.numberFormat)
-      ctx.fillText(previewNumber, x, y)
-
-      // Convert to data URL
-      const dataUrl = canvas.toDataURL('image/png', 0.98)
+      
       setPreviewDataUrl(dataUrl)
     } catch (error) {
       console.error('Failed to generate preview:', error)
     } finally {
       setIsGenerating(false)
-    }
-  }
-
-  const formatNumber = (num: number, format: string): string => {
-    switch (format) {
-      case '001':
-        return num.toString().padStart(3, '0')
-      case '0001':
-        return num.toString().padStart(4, '0')
-      case '1':
-        return num.toString()
-      default:
-        return num.toString().padStart(3, '0')
     }
   }
 
@@ -173,7 +164,7 @@ export function NumberingPreview({
 
             {/* Message */}
             <p className="text-center text-sm text-gray-600">
-              You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatNumber(settings.startNumber, settings.numberFormat)}.
+              You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatTicketNumber(settings.startNumber, settings.numberFormat)}.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -258,7 +249,7 @@ export function NumberingPreview({
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="text-sm text-gray-600">
                   <div>Tickets to generate: {ticketCount}</div>
-                  <div>Number range: {formatNumber(settings.startNumber, settings.numberFormat)} - {formatNumber(settings.startNumber + ticketCount - 1, settings.numberFormat)}</div>
+                  <div>Number range: {formatTicketNumber(settings.startNumber, settings.numberFormat)} - {formatTicketNumber(settings.startNumber + ticketCount - 1, settings.numberFormat)}</div>
                   <div>Estimated ZIP size: ~{Math.round((ticketCount * 150) / 1024)}MB</div>
                 </div>
               </div>

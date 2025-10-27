@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { renderTicketToDataUrl, formatTicketNumber } from '@/lib/ticketRenderer'
 
 interface ExportProgressProps {
   isOpen: boolean
@@ -14,12 +15,13 @@ interface ExportProgressProps {
     numberFormat: string
     ticketWidth: number
     ticketHeight: number
+    fx: number
+    fy: number
     fontSize: number
     fontColor: string
   }
   imageSrc: string
   imageDimensions: { width: number; height: number } | null
-  position: { fx: number; fy: number }
 }
 
 interface TicketProgress {
@@ -38,7 +40,7 @@ export function ExportProgress({
   onError,
   exportSettings,
   imageSrc,
-  position
+  imageDimensions
 }: ExportProgressProps) {
   const [progress, setProgress] = useState<TicketProgress[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -64,53 +66,24 @@ export function ExportProgress({
     setErrorCount(0)
   }
 
-  const formatNumber = (num: number, format: string): string => {
-    switch (format) {
-      case '001':
-        return num.toString().padStart(3, '0')
-      case '0001':
-        return num.toString().padStart(4, '0')
-      case '1':
-        return num.toString()
-      default:
-        return num.toString().padStart(3, '0')
-    }
-  }
-
   const generateTicket = async (ticketIndex: number): Promise<string> => {
-    const canvas = document.createElement('canvas')
-    canvas.width = exportSettings.ticketWidth
-    canvas.height = exportSettings.ticketHeight
-    const ctx = canvas.getContext('2d')!
-
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-
-    await new Promise((resolve, reject) => {
-      img.onload = resolve
-      img.onerror = reject
-      img.src = imageSrc
-    })
-
-    // Draw the background image at exact dimensions
-    ctx.drawImage(img, 0, 0, exportSettings.ticketWidth, exportSettings.ticketHeight)
-
-    // Draw the number using normalized coordinates
-    ctx.fillStyle = exportSettings.fontColor
-    ctx.font = `bold ${exportSettings.fontSize}px Arial`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
-    // Convert normalized position to absolute pixels
-    const x = Math.round(position.fx * exportSettings.ticketWidth)
-    const y = Math.round(position.fy * exportSettings.ticketHeight)
-
     const ticketNumber = exportSettings.startNumber + ticketIndex
-    const formattedNumber = formatNumber(ticketNumber, exportSettings.numberFormat)
-    ctx.fillText(formattedNumber, x, y)
+    
+    // Get actual image dimensions
+    const imgWidth = imageDimensions?.width || exportSettings.ticketWidth
+    const imgHeight = imageDimensions?.height || exportSettings.ticketHeight
 
-    // Convert to data URL
-    return canvas.toDataURL('image/png', 0.98)
+    // Use the unified ticket renderer
+    return renderTicketToDataUrl(imageSrc, ticketNumber, {
+      width: imgWidth,
+      height: imgHeight,
+      fx: exportSettings.fx,
+      fy: exportSettings.fy,
+      fontSize: exportSettings.fontSize,
+      fontColor: exportSettings.fontColor,
+      numberFormat: exportSettings.numberFormat,
+      startNumber: exportSettings.startNumber
+    })
   }
 
   const startGeneration = async () => {
@@ -246,7 +219,7 @@ export function ExportProgress({
                   <div key={ticket.index} className="p-3 flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="text-sm font-medium text-gray-900 mr-3">
-                        #{formatNumber(exportSettings.startNumber + ticket.index, exportSettings.numberFormat)}
+                        #{formatTicketNumber(exportSettings.startNumber + ticket.index, exportSettings.numberFormat)}
                       </span>
                       {ticket.status === 'pending' && (
                         <span className="text-xs text-gray-500">Pending</span>
