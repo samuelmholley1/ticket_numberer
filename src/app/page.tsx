@@ -7,7 +7,7 @@ import { ExportProgress } from '@/components/ExportProgress'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastContainer, toast } from '@/components/Toast'
 import { createZipFromDataUrls } from '@/lib/zipExport'
-import { export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
+import { export3UpLetterPDF, export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
 import { exportTicketWithNumber } from '@/lib/zipExport'
 
 export default function TicketBuilder() {
@@ -85,7 +85,7 @@ export default function TicketBuilder() {
         toast.success('Export Complete', 'Your numbered tickets ZIP has been downloaded!')
       } else if (exportSettings!.exportFormat === 'pdf') {
         console.log('Creating PDF with', images.length, 'images')
-        const pdfBytes = await export8UpLetterPDF({
+        const pdfBytes = await export3UpLetterPDF({
           imageSrc: uploadedImage!,
           totalTickets: dataUrls.length,
           startNumber: exportSettings!.startNumber,

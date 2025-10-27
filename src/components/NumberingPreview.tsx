@@ -267,8 +267,8 @@ export function NumberingPreview({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="zip">ZIP (All tickets in one file)</option>
-                    <option value="pdf">PDF (Print-ready, 8-up layout)</option>
-                    <option value="individual">Individual PNGs (Download each separately)</option>
+                    <option value="pdf">PDF (3-up US Letter, print-ready)</option>
+                    <option value="individual">Individual PNGs (Download separately)</option>
                   </select>
                 </div>
 

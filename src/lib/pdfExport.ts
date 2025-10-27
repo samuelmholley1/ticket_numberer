@@ -77,6 +77,153 @@ export async function exportSingleTicketPDF(
 }
 
 /**
+ * Export tickets as 3-up US Letter PDF (optimized for 2000×647px landscape tickets)
+ * 3 tickets stacked vertically per page with crop marks
+ */
+export async function export3UpLetterPDF(
+  settings: PDFExportSettings,
+  onProgress?: (current: number, total: number) => void
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create()
+
+  // US Letter size in points
+  const pageWidthPt = 612 // 8.5"
+  const pageHeightPt = 792 // 11"
+
+  // Calculate ticket dimensions in points
+  const dpi = 300
+  const widthInches = settings.width / dpi
+  const heightInches = settings.height / dpi
+  const ticketWidthPt = widthInches * 72
+  const ticketHeightPt = heightInches * 72
+
+  console.log(`Ticket dimensions: ${ticketWidthPt.toFixed(2)}pt × ${ticketHeightPt.toFixed(2)}pt (${widthInches.toFixed(2)}" × ${heightInches.toFixed(2)}")`)
+
+  // 3-up layout: 3 tickets stacked vertically
+  const ticketsPerPage = 3
+
+  // Calculate margins to center the tickets
+  const marginX = (pageWidthPt - ticketWidthPt) / 2
+  const marginY = (pageHeightPt - (ticketsPerPage * ticketHeightPt)) / 2
+
+  console.log(`Margins: X=${marginX.toFixed(2)}pt, Y=${marginY.toFixed(2)}pt`)
+
+  // Pre-render all tickets
+  const renderedTickets: string[] = []
+  for (let i = 0; i < settings.totalTickets; i++) {
+    const ticketNumber = settings.startNumber + i
+    const dataUrl = await renderTicketToDataUrl(settings.imageSrc, ticketNumber, {
+      width: settings.width,
+      height: settings.height,
+      fx: settings.fx,
+      fy: settings.fy,
+      fontSize: settings.fontSize,
+      fontColor: settings.fontColor,
+      fontFamily: settings.fontFamily,
+      numberFormat: settings.numberFormat,
+      startNumber: settings.startNumber
+    })
+    renderedTickets.push(dataUrl)
+    
+    if (onProgress) {
+      onProgress(i + 1, settings.totalTickets)
+    }
+  }
+
+  // Layout tickets on pages
+  const totalPages = Math.ceil(settings.totalTickets / ticketsPerPage)
+  console.log(`Total pages: ${totalPages}`)
+
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+    const page = pdfDoc.addPage([pageWidthPt, pageHeightPt])
+
+    const startTicket = pageIndex * ticketsPerPage
+    const endTicket = Math.min(startTicket + ticketsPerPage, settings.totalTickets)
+
+    for (let i = startTicket; i < endTicket; i++) {
+      const positionOnPage = i - startTicket
+
+      // Calculate position (Y is from bottom in PDF)
+      const x = marginX
+      const y = pageHeightPt - marginY - (positionOnPage + 1) * ticketHeightPt
+
+      // Embed and draw ticket
+      const pngImageBytes = await fetch(renderedTickets[i]).then(res => res.arrayBuffer())
+      const pngImage = await pdfDoc.embedPng(pngImageBytes)
+
+      page.drawImage(pngImage, {
+        x,
+        y,
+        width: ticketWidthPt,
+        height: ticketHeightPt
+      })
+
+      // Draw crop marks (light gray, 0.5pt stroke)
+      const cropMarkLength = 18 // 0.25"
+      const cropMarkOffset = 3 // 3pt from edge
+
+      // Top-left
+      page.drawLine({
+        start: { x: x - cropMarkOffset, y: y + ticketHeightPt },
+        end: { x: x - cropMarkOffset - cropMarkLength, y: y + ticketHeightPt },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+      page.drawLine({
+        start: { x: x, y: y + ticketHeightPt + cropMarkOffset },
+        end: { x: x, y: y + ticketHeightPt + cropMarkOffset + cropMarkLength },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+
+      // Top-right
+      page.drawLine({
+        start: { x: x + ticketWidthPt + cropMarkOffset, y: y + ticketHeightPt },
+        end: { x: x + ticketWidthPt + cropMarkOffset + cropMarkLength, y: y + ticketHeightPt },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+      page.drawLine({
+        start: { x: x + ticketWidthPt, y: y + ticketHeightPt + cropMarkOffset },
+        end: { x: x + ticketWidthPt, y: y + ticketHeightPt + cropMarkOffset + cropMarkLength },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+
+      // Bottom-left
+      page.drawLine({
+        start: { x: x - cropMarkOffset, y: y },
+        end: { x: x - cropMarkOffset - cropMarkLength, y: y },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+      page.drawLine({
+        start: { x: x, y: y - cropMarkOffset },
+        end: { x: x, y: y - cropMarkOffset - cropMarkLength },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+
+      // Bottom-right
+      page.drawLine({
+        start: { x: x + ticketWidthPt + cropMarkOffset, y: y },
+        end: { x: x + ticketWidthPt + cropMarkOffset + cropMarkLength, y: y },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+      page.drawLine({
+        start: { x: x + ticketWidthPt, y: y - cropMarkOffset },
+        end: { x: x + ticketWidthPt, y: y - cropMarkOffset - cropMarkLength },
+        thickness: 0.5,
+        color: rgb(0.4, 0.4, 0.4)
+      })
+    }
+  }
+
+  return await pdfDoc.save()
+}
+
+/**
  * Export tickets as 8-up US Letter PDF with crop marks
  * 4 columns × 2 rows per page
  */
