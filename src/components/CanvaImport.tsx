@@ -210,11 +210,11 @@ export function CanvaImport({
                   />
                 </svg>
                 <div className="text-lg font-medium mb-2">
-                  Drop your Canva PNG/JPEG here
+                  Drop your Canva PNG here
                 </div>
-                <div className="text-sm">or click to browse files</div>
+                <div className="text-sm">or click to browse files (PNG recommended for best quality)</div>
                 <div className="text-xs text-gray-400 mt-2">
-                  Max file size: {MAX_FILE_SIZE / (1024 * 1024)}MB
+                  Max file size: {MAX_FILE_SIZE / (1024 * 1024)}MB • Also accepts JPEG
                 </div>
               </div>
             )}

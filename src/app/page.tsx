@@ -106,7 +106,10 @@ export default function TicketBuilder() {
               🎫 Ticket Numberer
             </h1>
             <p className="text-gray-600">
-              Upload your Canva design and add sequential numbering
+              Upload your Canva design (PNG @ 300 DPI) and add sequential numbering
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              💡 Export from Canva: Share → Download → PNG (Maximum Quality)
             </p>
           </div>
 
