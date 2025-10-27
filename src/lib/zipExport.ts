@@ -5,10 +5,12 @@ export async function createZipFromDataUrls(
   dataUrls: Array<{ dataUrl: string; filename: string }>,
   zipFilename: string = 'tickets.zip'
 ): Promise<void> {
+  console.log('createZipFromDataUrls called with', dataUrls.length, 'files')
   const zip = new JSZip()
 
   // Add each data URL to the zip
   for (const { dataUrl, filename } of dataUrls) {
+    console.log('Adding to zip:', filename)
     // Convert data URL to blob
     const response = await fetch(dataUrl)
     const blob = await response.blob()
@@ -18,8 +20,12 @@ export async function createZipFromDataUrls(
   }
 
   // Generate and download the zip
+  console.log('Generating ZIP blob...')
   const zipBlob = await zip.generateAsync({ type: 'blob' })
+  console.log('ZIP blob size:', zipBlob.size, 'bytes')
+  console.log('Triggering download:', zipFilename)
   saveAs(zipBlob, zipFilename)
+  console.log('Download triggered successfully')
 }
 
 export async function createZipFromBlobs(

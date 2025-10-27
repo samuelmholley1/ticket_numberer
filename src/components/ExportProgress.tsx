@@ -93,6 +93,8 @@ export function ExportProgress({
     setIsGenerating(true)
 
     const dataUrls: string[] = []
+    let completed = 0
+    let errors = 0
 
     for (let i = 0; i < totalTickets; i++) {
       setCurrentIndex(i)
@@ -111,7 +113,8 @@ export function ExportProgress({
           p.index === i ? { ...p, status: 'completed', dataUrl } : p
         ))
 
-        setCompletedCount(prev => prev + 1)
+        completed++
+        setCompletedCount(completed)
         onTicketGenerated?.(i, dataUrl)
 
         // Small delay to prevent UI blocking
@@ -129,14 +132,18 @@ export function ExportProgress({
           } : p
         ))
 
-        setErrorCount(prev => prev + 1)
+        errors++
+        setErrorCount(errors)
         onError?.(error instanceof Error ? error : new Error('Unknown error'))
       }
     }
 
     setIsGenerating(false)
 
-    if (completedCount + errorCount === totalTickets) {
+    // Call onComplete with all successfully generated tickets
+    console.log('Generation complete. Total tickets:', completed, 'Errors:', errors)
+    if (completed > 0) {
+      console.log('Calling onComplete with', dataUrls.length, 'dataUrls')
       onComplete?.(dataUrls)
     }
   }

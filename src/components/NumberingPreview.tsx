@@ -325,7 +325,9 @@ export function NumberingPreview({
                 onClick={handleConfirm}
                 className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
               >
-                Generate ZIP
+                {settings.exportFormat === 'zip' && 'Generate ZIP'}
+                {settings.exportFormat === 'pdf' && 'Generate PDF'}
+                {settings.exportFormat === 'individual' && 'Download Individual Files'}
               </button>
             </div>
           </div>
