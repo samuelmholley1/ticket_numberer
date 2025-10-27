@@ -1,0 +1,65 @@
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Next.js
+/.next/
+/out/
+build
+.env*.local
+
+# Secrets and credentials (NEVER commit these!)
+CREDENTIALS.md
+.env.local
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Yarn (exclude cache - too large for GitHub)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+!.yarn/sdks
+.pnp.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
