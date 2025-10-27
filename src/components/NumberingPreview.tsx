@@ -23,6 +23,7 @@ export interface ExportSettings {
   fy: number // Normalized y position
   fontSize: number
   fontColor: string
+  fontFamily: string
   backgroundColor?: string
 }
 
@@ -51,7 +52,8 @@ export function NumberingPreview({
     fx: position.fx,
     fy: position.fy,
     fontSize: 48,
-    fontColor: '#000000'
+    fontColor: '#000000',
+    fontFamily: 'Arial'
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -112,10 +114,11 @@ export function NumberingPreview({
       const dataUrl = await renderTicketToDataUrl(imageSrc, settings.startNumber, {
         width: imgWidth,
         height: imgHeight,
-        fx: position.fx,
-        fy: position.fy,
+        fx: settings.fx,
+        fy: settings.fy,
         fontSize: settings.fontSize,
         fontColor: settings.fontColor,
+        fontFamily: settings.fontFamily,
         numberFormat: settings.numberFormat,
         startNumber: settings.startNumber
       })
@@ -221,6 +224,25 @@ export function NumberingPreview({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Font Family
+                  </label>
+                  <select
+                    value={settings.fontFamily}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Impact">Impact</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Font Size
                   </label>
                   <input
@@ -242,6 +264,36 @@ export function NumberingPreview({
                     value={settings.fontColor}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position X ({Math.round(settings.fx * 100)}%)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={settings.fx}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position Y ({Math.round(settings.fy * 100)}%)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={settings.fy}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) }))}
+                    className="w-full"
                   />
                 </div>
               </div>

@@ -19,6 +19,7 @@ interface ExportProgressProps {
     fy: number
     fontSize: number
     fontColor: string
+    fontFamily: string
   }
   imageSrc: string
   imageDimensions: { width: number; height: number } | null
@@ -81,6 +82,7 @@ export function ExportProgress({
       fy: exportSettings.fy,
       fontSize: exportSettings.fontSize,
       fontColor: exportSettings.fontColor,
+      fontFamily: exportSettings.fontFamily,
       numberFormat: exportSettings.numberFormat,
       startNumber: exportSettings.startNumber
     })
