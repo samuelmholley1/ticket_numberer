@@ -43,6 +43,7 @@ export function NumberingPreview({
   const [isDragging, setIsDragging] = useState(false)
   const [dragPosition, setDragPosition] = useState<{ fx: number; fy: number } | null>(null)
   const [isEditingLocation, setIsEditingLocation] = useState(true)
+  const [imageHeight, setImageHeight] = useState<number>(400)
   const previewImageRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
@@ -103,6 +104,31 @@ export function NumberingPreview({
       generatePreview()
     }
   }, [isOpen, imageSrc, position, settings])
+
+  // Match slider height to actual rendered image height
+  useEffect(() => {
+    const updateImageHeight = () => {
+      if (!previewImageRef.current) return
+      const img = previewImageRef.current.querySelector('img')
+      if (img) {
+        const height = img.getBoundingClientRect().height
+        setImageHeight(Math.max(100, Math.round(height)))
+      }
+    }
+    
+    if (isOpen && previewDataUrl) {
+      // Wait for image to render
+      setTimeout(updateImageHeight, 100)
+      
+      // Set up observer for dynamic updates
+      const observer = new ResizeObserver(updateImageHeight)
+      if (previewImageRef.current) {
+        observer.observe(previewImageRef.current)
+      }
+      
+      return () => observer.disconnect()
+    }
+  }, [isOpen, previewDataUrl])
 
   // Close on Escape key
   useEffect(() => {
@@ -228,9 +254,29 @@ export function NumberingPreview({
                     value={1 - settings.fy} // Invert for correct orientation (0 at top, 1 at bottom)
                     onChange={(e) => setSettings(prev => ({ ...prev, fy: 1 - parseFloat(e.target.value) }))}
                     className="cursor-pointer"
-                    style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: '400px' }}
+                    style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: `${imageHeight}px` }}
+                    disabled={!isEditingLocation}
                   />
                   <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
+                  
+                  {/* Numeric input for precise positioning */}
+                  {isEditingLocation && (
+                    <div className="mt-2 flex flex-col items-center gap-1">
+                      <label className="text-xs text-gray-600">Y (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={Math.round(settings.fy * 100)}
+                        onChange={(e) => {
+                          const percent = Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                          setSettings(prev => ({ ...prev, fy: percent / 100 }))
+                        }}
+                        className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Preview image with click/drag positioning */}
@@ -314,9 +360,29 @@ export function NumberingPreview({
                       value={settings.fx}
                       onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
                       className="w-full cursor-pointer"
+                      disabled={!isEditingLocation}
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
                       <span>Position X: {Math.round(settings.fx * 100)}%</span>
+                      
+                      {/* Numeric input for X position */}
+                      {isEditingLocation && (
+                        <div className="flex items-center gap-1">
+                          <label className="text-xs text-gray-600">X (%)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={Math.round(settings.fx * 100)}
+                            onChange={(e) => {
+                              const percent = Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                              setSettings(prev => ({ ...prev, fx: percent / 100 }))
+                            }}
+                            className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
