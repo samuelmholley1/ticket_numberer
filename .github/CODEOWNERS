@@ -1,0 +1,10 @@
+# Code owners for this repository
+# When a PR is opened, these users will be automatically requested for review
+
+# Global owners
+* @samuelmholley1
+
+# Specific file owners (examples)
+# src/components/ @frontend-team
+# src/lib/ @backend-team
+# docs/ @documentation-team
