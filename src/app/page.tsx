@@ -85,21 +85,65 @@ export default function TicketBuilder() {
         toast.success('Export Complete', 'Your numbered tickets ZIP has been downloaded!')
       } else if (exportSettings!.exportFormat === 'pdf') {
         console.log('Creating PDF with', images.length, 'images')
-        const pdfBytes = await export3UpLetterPDF({
-          imageSrc: uploadedImage!,
-          totalTickets: dataUrls.length,
-          startNumber: exportSettings!.startNumber,
-          numberFormat: exportSettings!.numberFormat,
-          width: imageDimensions!.width,
-          height: imageDimensions!.height,
-          fx: exportSettings!.fx,
-          fy: exportSettings!.fy,
-          fontSize: exportSettings!.fontSize,
-          fontColor: exportSettings!.fontColor,
-          fontFamily: exportSettings!.fontFamily
-        })
-        downloadPDF(pdfBytes, `numbered_tickets_${exportSettings!.startNumber}-${exportSettings!.startNumber + dataUrls.length - 1}.pdf`)
-        toast.success('Export Complete', 'Your numbered tickets PDF has been downloaded!')
+        
+        // Email-friendly batch size: max 50 tickets per PDF (~10-15MB depending on image complexity)
+        const maxTicketsPerBatch = 50
+        const needsBatching = dataUrls.length > maxTicketsPerBatch
+        
+        if (needsBatching) {
+          // Create multiple smaller PDFs
+          const batches = Math.ceil(dataUrls.length / maxTicketsPerBatch)
+          console.log(`Batching into ${batches} separate PDFs (${maxTicketsPerBatch} tickets each)`)
+          
+          for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+            const startTicket = batchIndex * maxTicketsPerBatch
+            const endTicket = Math.min(startTicket + maxTicketsPerBatch, dataUrls.length)
+            const batchSize = endTicket - startTicket
+            
+            console.log(`Generating batch ${batchIndex + 1}/${batches}: tickets ${exportSettings!.startNumber + startTicket}-${exportSettings!.startNumber + endTicket - 1}`)
+            
+            const pdfBytes = await export3UpLetterPDF({
+              imageSrc: uploadedImage!,
+              totalTickets: batchSize,
+              startNumber: exportSettings!.startNumber + startTicket,
+              numberFormat: exportSettings!.numberFormat,
+              width: imageDimensions!.width,
+              height: imageDimensions!.height,
+              fx: exportSettings!.fx,
+              fy: exportSettings!.fy,
+              fontSize: exportSettings!.fontSize,
+              fontColor: exportSettings!.fontColor,
+              fontFamily: exportSettings!.fontFamily
+            })
+            
+            const filename = `tickets_${exportSettings!.startNumber + startTicket}-${exportSettings!.startNumber + endTicket - 1}_batch${batchIndex + 1}of${batches}.pdf`
+            downloadPDF(pdfBytes, filename)
+            
+            // Small delay between downloads to prevent browser blocking
+            if (batchIndex < batches - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000))
+            }
+          }
+          
+          toast.success('Export Complete', `${batches} PDF files downloaded (email-friendly batches of ${maxTicketsPerBatch} tickets each)`)
+        } else {
+          // Single PDF for smaller batches
+          const pdfBytes = await export3UpLetterPDF({
+            imageSrc: uploadedImage!,
+            totalTickets: dataUrls.length,
+            startNumber: exportSettings!.startNumber,
+            numberFormat: exportSettings!.numberFormat,
+            width: imageDimensions!.width,
+            height: imageDimensions!.height,
+            fx: exportSettings!.fx,
+            fy: exportSettings!.fy,
+            fontSize: exportSettings!.fontSize,
+            fontColor: exportSettings!.fontColor,
+            fontFamily: exportSettings!.fontFamily
+          })
+          downloadPDF(pdfBytes, `numbered_tickets_${exportSettings!.startNumber}-${exportSettings!.startNumber + dataUrls.length - 1}.pdf`)
+          toast.success('Export Complete', 'Your numbered tickets PDF has been downloaded!')
+        }
       } else if (exportSettings!.exportFormat === 'individual') {
         console.log('Downloading individual files')
         // Download each file individually with a small delay between downloads

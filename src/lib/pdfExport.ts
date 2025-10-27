@@ -78,7 +78,7 @@ export async function exportSingleTicketPDF(
 
 /**
  * Export tickets as 3-up US Letter PDF (optimized for 2000×647px landscape tickets)
- * 3 tickets stacked vertically per page with crop marks
+ * 3 tickets stacked vertically per page with crop marks and padding
  */
 export async function export3UpLetterPDF(
   settings: PDFExportSettings,
@@ -99,14 +99,18 @@ export async function export3UpLetterPDF(
 
   console.log(`Ticket dimensions: ${ticketWidthPt.toFixed(2)}pt × ${ticketHeightPt.toFixed(2)}pt (${widthInches.toFixed(2)}" × ${heightInches.toFixed(2)}")`)
 
-  // 3-up layout: 3 tickets stacked vertically
+  // 3-up layout: 3 tickets stacked vertically with padding
   const ticketsPerPage = 3
+  const paddingBetweenTickets = 14 // 14pt = ~0.19" padding between tickets
 
+  // Calculate total height needed including padding
+  const totalContentHeight = (ticketsPerPage * ticketHeightPt) + ((ticketsPerPage - 1) * paddingBetweenTickets)
+  
   // Calculate margins to center the tickets
   const marginX = (pageWidthPt - ticketWidthPt) / 2
-  const marginY = (pageHeightPt - (ticketsPerPage * ticketHeightPt)) / 2
+  const marginY = (pageHeightPt - totalContentHeight) / 2
 
-  console.log(`Margins: X=${marginX.toFixed(2)}pt, Y=${marginY.toFixed(2)}pt`)
+  console.log(`Margins: X=${marginX.toFixed(2)}pt, Y=${marginY.toFixed(2)}pt, Padding=${paddingBetweenTickets}pt`)
 
   // Pre-render all tickets
   const renderedTickets: string[] = []
@@ -143,9 +147,9 @@ export async function export3UpLetterPDF(
     for (let i = startTicket; i < endTicket; i++) {
       const positionOnPage = i - startTicket
 
-      // Calculate position (Y is from bottom in PDF)
+      // Calculate position (Y is from bottom in PDF) - add padding between tickets
       const x = marginX
-      const y = pageHeightPt - marginY - (positionOnPage + 1) * ticketHeightPt
+      const y = pageHeightPt - marginY - (positionOnPage * (ticketHeightPt + paddingBetweenTickets)) - ticketHeightPt
 
       // Embed and draw ticket
       const pngImageBytes = await fetch(renderedTickets[i]).then(res => res.arrayBuffer())
@@ -220,7 +224,11 @@ export async function export3UpLetterPDF(
     }
   }
 
-  return await pdfDoc.save()
+  const pdfBytes = await pdfDoc.save()
+  const sizeInMB = (pdfBytes.length / 1024 / 1024).toFixed(2)
+  console.log(`PDF size: ${sizeInMB}MB`)
+  
+  return pdfBytes
 }
 
 /**
