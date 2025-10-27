@@ -41,6 +41,7 @@ export function NumberingPreview({
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [dragPosition, setDragPosition] = useState<{ fx: number; fy: number } | null>(null)
   const previewImageRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
@@ -160,7 +161,17 @@ export function NumberingPreview({
     const fx = Math.max(0, Math.min(1, x / rect.width))
     const fy = Math.max(0, Math.min(1, y / rect.height))
     
-    setSettings(prev => ({ ...prev, fx, fy }))
+    // Update temporary drag position without triggering preview regeneration
+    setDragPosition({ fx, fy })
+  }
+
+  const handleMouseUp = () => {
+    if (isDragging && dragPosition) {
+      // Apply the final drag position to settings
+      setSettings(prev => ({ ...prev, fx: dragPosition.fx, fy: dragPosition.fy }))
+      setDragPosition(null)
+    }
+    setIsDragging(false)
   }
 
   const handleConfirm = () => {
@@ -215,8 +226,8 @@ export function NumberingPreview({
                     min="0"
                     max="1"
                     step="0.01"
-                    value={settings.fy}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) }))}
+                    value={1 - settings.fy} // Invert for correct orientation (0 at top, 1 at bottom)
+                    onChange={(e) => setSettings(prev => ({ ...prev, fy: 1 - parseFloat(e.target.value) }))}
                     className="h-64 cursor-pointer"
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px' }}
                   />
@@ -230,8 +241,8 @@ export function NumberingPreview({
                     className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative cursor-crosshair"
                     onClick={handlePreviewClick}
                     onMouseDown={() => setIsDragging(true)}
-                    onMouseUp={() => setIsDragging(false)}
-                    onMouseLeave={() => setIsDragging(false)}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
                     onMouseMove={handlePreviewDrag}
                   >
                     {isGenerating ? (
@@ -251,8 +262,8 @@ export function NumberingPreview({
                         <div
                           className="absolute w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-lg pointer-events-none"
                           style={{
-                            left: `${settings.fx * 100}%`,
-                            top: `${settings.fy * 100}%`,
+                            left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
+                            top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                             transform: 'translate(-50%, -50%)'
                           }}
                         />
