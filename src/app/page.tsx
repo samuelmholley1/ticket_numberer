@@ -7,6 +7,7 @@ import { ExportProgress } from '@/components/ExportProgress'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastContainer, toast } from '@/components/Toast'
 import { createZipFromDataUrls } from '@/lib/zipExport'
+import { export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
 import { exportTicketWithNumber } from '@/lib/zipExport'
 
 export default function TicketBuilder() {
@@ -64,6 +65,8 @@ export default function TicketBuilder() {
 
   const handleExportComplete = async (dataUrls: string[]) => {
     try {
+      console.log('Export complete, dataUrls length:', dataUrls.length)
+      
       const images = dataUrls.map((dataUrl, index) => {
         const ticketNumber = exportSettings!.startNumber + index
         const formattedNumber = formatNumber(ticketNumber, exportSettings!.numberFormat)
@@ -73,11 +76,57 @@ export default function TicketBuilder() {
         }
       })
 
-      await createZipFromDataUrls(images, 'numbered_tickets.zip')
-      toast.success('Export Complete', 'Your numbered tickets have been downloaded successfully!')
+      console.log('Export format:', exportSettings!.exportFormat)
+
+      if (exportSettings!.exportFormat === 'zip') {
+        console.log('Creating ZIP with', images.length, 'images')
+        await createZipFromDataUrls(images, 'numbered_tickets.zip')
+        console.log('ZIP creation successful')
+        toast.success('Export Complete', 'Your numbered tickets ZIP has been downloaded!')
+      } else if (exportSettings!.exportFormat === 'pdf') {
+        console.log('Creating PDF with', images.length, 'images')
+        const pdfBytes = await export8UpLetterPDF({
+          imageSrc: uploadedImage!,
+          totalTickets: dataUrls.length,
+          startNumber: exportSettings!.startNumber,
+          numberFormat: exportSettings!.numberFormat,
+          width: imageDimensions!.width,
+          height: imageDimensions!.height,
+          fx: exportSettings!.fx,
+          fy: exportSettings!.fy,
+          fontSize: exportSettings!.fontSize,
+          fontColor: exportSettings!.fontColor,
+          fontFamily: exportSettings!.fontFamily
+        })
+        downloadPDF(pdfBytes, `numbered_tickets_${exportSettings!.startNumber}-${exportSettings!.startNumber + dataUrls.length - 1}.pdf`)
+        toast.success('Export Complete', 'Your numbered tickets PDF has been downloaded!')
+      } else if (exportSettings!.exportFormat === 'individual') {
+        console.log('Downloading individual files')
+        // Download each file individually with a small delay between downloads
+        for (let i = 0; i < images.length; i++) {
+          const { dataUrl, filename } = images[i]
+          const response = await fetch(dataUrl)
+          const blob = await response.blob()
+          const url = URL.createObjectURL(blob)
+          
+          const link = document.createElement('a')
+          link.href = url
+          link.download = filename
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          
+          // Small delay to prevent browser blocking multiple downloads
+          if (i < images.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+        }
+        toast.success('Export Complete', `${images.length} individual ticket files have been downloaded!`)
+      }
     } catch (error) {
-      console.error('ZIP creation failed:', error)
-      toast.error('Export Failed', 'Failed to create ZIP file. Please try again.')
+      console.error('Export failed:', error)
+      toast.error('Export Failed', 'Failed to export files. Please try again.')
     } finally {
       setShowProgress(false)
       setExportSettings(null)

@@ -20,6 +20,7 @@ interface ExportProgressProps {
     fontSize: number
     fontColor: string
     fontFamily: string
+    exportFormat: 'zip' | 'pdf' | 'individual'
   }
   imageSrc: string
   imageDimensions: { width: number; height: number } | null

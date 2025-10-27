@@ -24,6 +24,7 @@ export interface ExportSettings {
   fontSize: number
   fontColor: string
   fontFamily: string
+  exportFormat: 'zip' | 'pdf' | 'individual'
   backgroundColor?: string
 }
 
@@ -53,7 +54,8 @@ export function NumberingPreview({
     fy: position.fy,
     fontSize: 48,
     fontColor: '#000000',
-    fontFamily: 'Arial'
+    fontFamily: 'Arial',
+    exportFormat: 'zip'
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -257,14 +259,17 @@ export function NumberingPreview({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Font Color
+                    Export Format
                   </label>
-                  <input
-                    type="color"
-                    value={settings.fontColor}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
-                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
+                  <select
+                    value={settings.exportFormat}
+                    onChange={(e) => setSettings(prev => ({ ...prev, exportFormat: e.target.value as 'zip' | 'pdf' | 'individual' }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="zip">ZIP (All tickets in one file)</option>
+                    <option value="pdf">PDF (Print-ready, 8-up layout)</option>
+                    <option value="individual">Individual PNGs (Download each separately)</option>
+                  </select>
                 </div>
 
                 <div>
