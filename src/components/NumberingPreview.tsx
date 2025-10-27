@@ -40,6 +40,8 @@ export function NumberingPreview({
 }: NumberingPreviewProps) {
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const previewImageRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
   const imgWidth = imageDimensions?.width || 600
@@ -133,6 +135,34 @@ export function NumberingPreview({
     }
   }
 
+  const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!previewImageRef.current) return
+    
+    const rect = previewImageRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Convert to normalized coordinates
+    const fx = x / rect.width
+    const fy = y / rect.height
+    
+    setSettings(prev => ({ ...prev, fx, fy }))
+  }
+
+  const handlePreviewDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !previewImageRef.current) return
+    
+    const rect = previewImageRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Clamp to bounds
+    const fx = Math.max(0, Math.min(1, x / rect.width))
+    const fy = Math.max(0, Math.min(1, y / rect.height))
+    
+    setSettings(prev => ({ ...prev, fx, fy }))
+  }
+
   const handleConfirm = () => {
     onConfirm(settings)
     onClose()
@@ -173,25 +203,84 @@ export function NumberingPreview({
             </p>
 
             <div className="mt-6 space-y-4">
-              {/* Preview Image */}
-              <div className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-                {isGenerating ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-                    <span className="ml-2 text-sm text-gray-600">Generating preview...</span>
-                  </div>
-                ) : previewDataUrl ? (
-                  <img
-                    src={previewDataUrl}
-                    alt="Ticket preview"
-                    className="w-full h-auto object-contain"
-                    style={{ maxHeight: '60vh' }}
+              {/* Preview Image with Position Controls */}
+              <div className="flex gap-4">
+                {/* Y-axis slider on the left */}
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700 writing-mode-vertical-rl transform rotate-180">
+                    Position Y
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={settings.fy}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) }))}
+                    className="h-64 cursor-pointer"
+                    style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px' }}
                   />
-                ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-500">
-                    Failed to generate preview
+                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
+                </div>
+
+                {/* Preview image with click/drag positioning */}
+                <div className="flex-1">
+                  <div 
+                    ref={previewImageRef}
+                    className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative cursor-crosshair"
+                    onClick={handlePreviewClick}
+                    onMouseDown={() => setIsDragging(true)}
+                    onMouseUp={() => setIsDragging(false)}
+                    onMouseLeave={() => setIsDragging(false)}
+                    onMouseMove={handlePreviewDrag}
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                        <span className="ml-2 text-sm text-gray-600">Generating preview...</span>
+                      </div>
+                    ) : previewDataUrl ? (
+                      <>
+                        <img
+                          src={previewDataUrl}
+                          alt="Ticket preview"
+                          className="w-full h-auto object-contain pointer-events-none"
+                          style={{ maxHeight: '60vh' }}
+                        />
+                        {/* Position indicator */}
+                        <div
+                          className="absolute w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-lg pointer-events-none"
+                          style={{
+                            left: `${settings.fx * 100}%`,
+                            top: `${settings.fy * 100}%`,
+                            transform: 'translate(-50%, -50%)'
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 text-gray-500">
+                        Failed to generate preview
+                      </div>
+                    )}
                   </div>
-                )}
+                  
+                  {/* X-axis slider below */}
+                  <div className="mt-2 flex flex-col items-center gap-1">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.fx}
+                      onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
+                      className="w-full cursor-pointer"
+                    />
+                    <div className="flex justify-between w-full text-xs text-gray-500">
+                      <span>Position X: {Math.round(settings.fx * 100)}%</span>
+                      <span className="text-gray-400">Click or drag on preview to reposition</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Settings */}
@@ -274,31 +363,13 @@ export function NumberingPreview({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Position X ({Math.round(settings.fx * 100)}%)
+                    Font Color
                   </label>
                   <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={settings.fx}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Position Y ({Math.round(settings.fy * 100)}%)
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={settings.fy}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) }))}
-                    className="w-full"
+                    type="color"
+                    value={settings.fontColor}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
