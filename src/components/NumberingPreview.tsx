@@ -42,6 +42,7 @@ export function NumberingPreview({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [dragPosition, setDragPosition] = useState<{ fx: number; fy: number } | null>(null)
+  const [isEditingLocation, setIsEditingLocation] = useState(true)
   const previewImageRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
@@ -214,9 +215,10 @@ export function NumberingPreview({
             </p>
 
             <div className="mt-6 space-y-4">
-              {/* Y-axis slider above */}
-              <div className="flex justify-center">
-                <div className="flex items-center gap-2">
+              {/* Preview Image with Position Controls */}
+              <div className="flex gap-4 items-start">
+                {/* Y-axis slider on the left - aligned with image */}
+                <div className="flex flex-col items-center gap-2">
                   <span className="text-xs font-medium text-gray-700">Position Y</span>
                   <input
                     type="range"
@@ -225,26 +227,10 @@ export function NumberingPreview({
                     step="0.01"
                     value={1 - settings.fy} // Invert for correct orientation (0 at top, 1 at bottom)
                     onChange={(e) => setSettings(prev => ({ ...prev, fy: 1 - parseFloat(e.target.value) }))}
-                    className="w-64 cursor-pointer"
+                    className="cursor-pointer"
+                    style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: '400px' }}
                   />
                   <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
-                </div>
-              </div>
-
-              {/* Preview Image with Position Controls */}
-              <div className="flex gap-4">
-                {/* Y-axis slider on the left - aligned with image */}
-                <div className="flex flex-col items-center gap-2" style={{ marginTop: 'auto', marginBottom: 'auto' }}>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={1 - settings.fy} // Invert for correct orientation (0 at top, 1 at bottom)
-                    onChange={(e) => setSettings(prev => ({ ...prev, fy: 1 - parseFloat(e.target.value) }))}
-                    className="h-64 cursor-pointer"
-                    style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px' }}
-                  />
                 </div>
 
                 {/* Preview image with click/drag positioning */}
@@ -272,7 +258,7 @@ export function NumberingPreview({
                           style={{ maxHeight: '60vh' }}
                         />
                         {/* Position indicator - transparent text box with outline */}
-                        {!isDragging && (
+                        {!isDragging && isEditingLocation && (
                           <div
                             className="absolute border-2 border-gray-600 rounded px-2 py-1 pointer-events-none flex items-center gap-2"
                             style={{
@@ -288,7 +274,7 @@ export function NumberingPreview({
                         )}
                         
                         {/* Cursor hint text next to text box */}
-                        {!isDragging && (
+                        {!isDragging && isEditingLocation && (
                           <div
                             className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs pointer-events-none"
                             style={{
@@ -306,6 +292,16 @@ export function NumberingPreview({
                         Failed to generate preview
                       </div>
                     )}
+                  </div>
+                  
+                  {/* Edit/Save Location Button */}
+                  <div className="mt-2 flex justify-center">
+                    <button
+                      onClick={() => setIsEditingLocation(!isEditingLocation)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    >
+                      {isEditingLocation ? 'Save Location' : 'Edit Number Location'}
+                    </button>
                   </div>
                   
                   {/* X-axis slider below */}
