@@ -271,19 +271,30 @@ export function NumberingPreview({
                           className="w-full h-auto object-contain pointer-events-none"
                           style={{ maxHeight: '60vh' }}
                         />
-                        {/* Position indicator - text box cutout with cursor */}
+                        {/* Position indicator - transparent text box with outline */}
                         <div
-                          className="absolute bg-white bg-opacity-90 border-2 border-dashed border-gray-400 rounded px-2 py-1 shadow-lg pointer-events-none flex items-center gap-2"
+                          className="absolute border-2 border-gray-600 rounded px-2 py-1 pointer-events-none flex items-center gap-2"
                           style={{
                             left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
                             top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                             transform: 'translate(-50%, -50%)'
                           }}
                         >
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-sm font-bold text-gray-800">
                             {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                           </span>
-                          <span className="text-xs text-blue-600 animate-pulse">👆</span>
+                        </div>
+                        
+                        {/* Cursor emoji outside boundary */}
+                        <div
+                          className="absolute pointer-events-none"
+                          style={{
+                            left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
+                            top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
+                            transform: 'translate(-50%, -60px)' // Position above the text box
+                          }}
+                        >
+                          <span className="text-lg animate-pulse">👆</span>
                         </div>
                         
                         {/* Cursor hint text */}
