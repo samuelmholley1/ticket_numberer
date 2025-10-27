@@ -1,232 +1,305 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from "next/link"
-import Header from "@/components/Header"
-import Modal from "@/components/Modal"
-import MobileRestrict from '@/components/MobileRestrict'
-import { parseSmartRecipe } from '@/lib/smartRecipeParser'
-import { validateRecipeTextLength } from '@/lib/security'
+import { useState, useRef, useCallback } from 'react'
+import TicketTemplate from '@/components/TicketTemplate'
+import TicketControls from '@/components/TicketControls'
+import BatchExportProgress from '@/components/BatchExportProgress'
+import { TicketData, ExportConfig, ExportProgress, BatchExportResult } from '@/types/ticket'
+import { generateSequence, validateSequence } from '@/lib/sequence'
+import { exportTicketAsImage, downloadDataUrl, createFilename } from '@/lib/exportTicket'
+import { createZipFromDataUrls } from '@/lib/zipExport'
+import { exportTicketAsPDF, createMultiPagePDF } from '@/lib/pdfExport'
 
-export default function Home() {
-  const router = useRouter()
-  const [recipeText, setRecipeText] = useState('')
-  const [parsing, setParsing] = useState(false)
-  const [modal, setModal] = useState<{
-    isOpen: boolean
-    type: 'info' | 'error' | 'warning' | 'success' | 'confirm'
-    title: string
-    message: string
-    onConfirm?: () => void
-  }>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: ''
-  })
-  
-  // On mount, restore recipe text if returning from review page
-  useEffect(() => {
-    const stored = sessionStorage.getItem('originalRecipeText')
-    if (stored) {
-      setRecipeText(stored)
+export default function TicketBuilder() {
+  const [ticketData, setTicketData] = useState<TicketData>({
+    id: 'preview',
+    number: '001',
+    title: 'Sample Event',
+    subtitle: 'Date & Time',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    accentColor: '#3b82f6',
+    customFields: {
+      date: 'December 25, 2024',
+      time: '7:00 PM',
+      venue: 'Main Hall'
     }
+  })
+
+  const [exportProgress, setExportProgress] = useState<ExportProgress>({
+    current: 0,
+    total: 0,
+    status: 'idle'
+  })
+
+  const [showProgress, setShowProgress] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const ticketRef = useRef<HTMLDivElement>(null)
+
+  const handleTicketUpdate = useCallback((updates: Partial<TicketData>) => {
+    setTicketData(prev => ({ ...prev, ...updates }))
   }, [])
 
-  const handleParse = () => {
-    if (!recipeText.trim()) {
-      setModal({
-        isOpen: true,
-        type: 'warning',
-        title: 'No Recipe Text',
-        message: 'Please paste a recipe before continuing.'
-      })
-      return
-    }
+  const handleExport = async (config: ExportConfig) => {
+    const { sequence, options } = config
 
-    // Validate recipe length
-    const validation = validateRecipeTextLength(recipeText)
+    // Validate sequence
+    const validation = validateSequence(sequence)
     if (!validation.valid) {
-      setModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Recipe Too Long',
-        message: validation.error || 'The recipe text is too long to process.'
+      setExportProgress({
+        current: 0,
+        total: 0,
+        status: 'error',
+        error: validation.error
       })
+      setShowProgress(true)
       return
     }
 
-    setParsing(true)
-    // Small delay for UX (shows we're processing)
-    setTimeout(() => {
-      const result = parseSmartRecipe(recipeText)
-      // Store BOTH result AND original text in sessionStorage
-      sessionStorage.setItem('parsedRecipe', JSON.stringify(result))
-      sessionStorage.setItem('originalRecipeText', recipeText)
-      router.push('/import/review')
-    }, 300)
+    // Generate ticket numbers
+    const ticketNumbers = generateSequence(sequence)
+    const total = ticketNumbers.length
+
+    setExportProgress({
+      current: 0,
+      total,
+      status: 'exporting',
+      message: 'Starting export...'
+    })
+    setShowProgress(true)
+
+    // Create abort controller for cancellation
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const exportedData: Array<{ dataUrl: string; filename: string }> = []
+
+      for (let i = 0; i < ticketNumbers.length; i++) {
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error('Export cancelled')
+        }
+
+        const number = ticketNumbers[i]
+        const currentTicketData: TicketData = {
+          ...ticketData,
+          id: `ticket-${number}`,
+          number
+        }
+
+        setExportProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          message: `Exporting ticket ${number}...`
+        }))
+
+        // Update the preview ticket temporarily for export
+        setTicketData(currentTicketData)
+
+        // Wait for DOM update
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        if (!ticketRef.current) {
+          throw new Error('Ticket template not found')
+        }
+
+        let dataUrl: string
+        let filename: string
+
+        if (options.format === 'pdf') {
+          // Export as image first, then convert to PDF
+          const imageDataUrl = await exportTicketAsImage(ticketRef.current, currentTicketData, {
+            ...options,
+            format: 'png' // Always use PNG for PDF conversion
+          })
+
+          const pdfBlob = await exportTicketAsPDF(imageDataUrl, currentTicketData)
+          dataUrl = URL.createObjectURL(pdfBlob)
+          filename = createFilename(currentTicketData, 'pdf')
+        } else {
+          // Export as image
+          dataUrl = await exportTicketAsImage(ticketRef.current, currentTicketData, options)
+          filename = createFilename(currentTicketData, options.format)
+        }
+
+        exportedData.push({ dataUrl, filename })
+      }
+
+      // Reset to preview
+      setTicketData(prev => ({ ...prev, number: '001' }))
+
+      setExportProgress(prev => ({
+        ...prev,
+        status: 'zipping',
+        message: 'Creating download file...'
+      }))
+
+      if (options.includeZip || exportedData.length > 1) {
+        // Create ZIP file
+        await createZipFromDataUrls(exportedData, `tickets_${Date.now()}.zip`)
+      } else {
+        // Download single file
+        const { dataUrl, filename } = exportedData[0]
+        downloadDataUrl(dataUrl, filename)
+      }
+
+      setExportProgress(prev => ({
+        ...prev,
+        status: 'complete',
+        message: `Successfully exported ${total} ticket${total !== 1 ? 's' : ''}!`
+      }))
+
+    } catch (error) {
+      console.error('Export error:', error)
+      setExportProgress(prev => ({
+        ...prev,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown export error'
+      }))
+    }
+  }
+
+  const handleCancelExport = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    setExportProgress(prev => ({
+      ...prev,
+      status: 'idle',
+      message: 'Export cancelled'
+    }))
+    setShowProgress(false)
+  }
+
+  const handleCloseProgress = () => {
+    setShowProgress(false)
+    setExportProgress({
+      current: 0,
+      total: 0,
+      status: 'idle'
+    })
   }
 
   return (
-    <MobileRestrict>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-black text-gray-900 mb-3">
-            🚀 Smart Recipe Importer
-          </h1>
-          <p className="text-gray-600 text-xl">
-            Paste your recipe and get instant nutrition labels
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-900">🎫 WYSIWYG Ticket Builder</h1>
+            <div className="text-sm text-gray-600">
+              600×1500px artboard • 2″×5″ @ 300 DPI
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* MAIN ATTRACTION - Paste Area */}
-        <div className="bg-gradient-to-br from-white to-emerald-50 rounded-2xl shadow-2xl p-8 mb-6 border-4 border-emerald-400">
-          <label className="block text-2xl font-bold text-emerald-900 mb-4 text-center">
-            📋 Paste Your Recipe Here
-          </label>
-          
-          {/* Live Validation Feedback */}
-          {recipeText.trim() && (
-            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 text-sm">
-                {recipeText.split('\n').filter(l => l.trim()).length > 0 && (
-                  <span className="text-green-700">✓ Recipe name detected</span>
-                )}
-                {recipeText.split('\n').filter(l => l.trim()).length > 1 && (
-                  <span className="text-green-700">
-                    • ✓ {recipeText.split('\n').filter(l => l.trim()).length - 1} ingredient{recipeText.split('\n').filter(l => l.trim()).length - 1 > 1 ? 's' : ''} found
-                  </span>
-                )}
-                {recipeText.match(/\([^)]+\)/g) && (
-                  <span className="text-blue-700">
-                    • 🔍 {recipeText.match(/\([^)]+\)/g)!.length} potential sub-recipe{recipeText.match(/\([^)]+\)/g)!.length > 1 ? 's' : ''}
-                  </span>
-                )}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Live Preview */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900">Live Preview</h2>
+            <div className="flex justify-center">
+              <div className="transform scale-75 origin-top">
+                <div ref={ticketRef}>
+                  <TicketTemplate
+                    ticketData={ticketData}
+                    onUpdate={handleTicketUpdate}
+                    isPreview={false}
+                  />
+                </div>
               </div>
             </div>
-          )}
-          
-          <textarea
-            value={recipeText}
-            onChange={(e) => setRecipeText(e.target.value)}
-            onKeyDown={(e) => {
-              // Ctrl/Cmd + Enter to parse
-              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault()
-                handleParse()
-              }
-            }}
-            placeholder={`Paste your recipe here...
-
-Example:
-Chicken Tacos
-
-2 cups shredded chicken
-1 cup salsa verde (1/2 cup tomatillos, 1/4 cup onions, 2 tbsp cilantro, 1 jalapeño)
-8 corn tortillas
-1/2 cup cheese`}
-            className="w-full h-[500px] px-6 py-4 border-4 border-emerald-300 rounded-xl focus:ring-4 focus:ring-emerald-400 focus:border-emerald-500 font-mono text-base resize-none shadow-inner"
-          />
-          <div className="mt-3 flex justify-between items-center text-sm">
-            <span className="text-emerald-700 font-medium">{recipeText.split('\n').filter(l => l.trim()).length} lines</span>
-            <span className="text-xs text-gray-500">💡 Tip: Press Ctrl/Cmd + Enter to parse</span>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={handleParse}
-            disabled={parsing || !recipeText.trim()}
-            className="flex-1 px-8 py-5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all text-xl font-bold shadow-2xl hover:shadow-emerald-500/50 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-          >
-            {parsing ? (
-              <>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                Parsing Recipe...
-              </>
-            ) : (
-              <>
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-                Parse Recipe →
-              </>
-            )}
-          </button>
-          
-          <button
-            onClick={() => {
-              setModal({
-                isOpen: true,
-                type: 'confirm',
-                title: 'Clear Recipe',
-                message: 'Are you sure you want to clear the recipe text?',
-                onConfirm: () => setRecipeText('')
-              })
-            }}
-            disabled={!recipeText}
-            className="px-8 py-5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Clear
-          </button>
-        </div>
+          {/* Controls */}
+          <div className="space-y-6">
+            {/* Template Editor */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Template Editor</h3>
 
-        {/* Compact Instructions */}
-        <details className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <summary className="text-sm font-semibold text-blue-900 cursor-pointer hover:text-blue-700 flex items-center gap-2">
-            <span>💡</span>
-            <span>How to Format Your Recipe (click to expand)</span>
-          </summary>
-          <div className="mt-3 space-y-2 text-sm text-blue-900">
-            <div><strong>1. Recipe Name:</strong> First line is your dish name</div>
-            <div><strong>2. Ingredients:</strong> One per line with quantity and unit</div>
-            <div><strong>3. Sub-Recipes:</strong> Use parentheses for components</div>
-            <div className="mt-2 text-xs text-blue-700">
-              Example: <code className="bg-white px-1 rounded">1 cup salsa verde (1/2 cup tomatillos, 1/4 cup onions)</code>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Title
+                  </label>
+                  <input
+                    type="text"
+                    value={ticketData.title || ''}
+                    onChange={(e) => handleTicketUpdate({ title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter event title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={ticketData.subtitle || ''}
+                    onChange={(e) => handleTicketUpdate({ subtitle: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter subtitle"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Background
+                    </label>
+                    <input
+                      type="color"
+                      value={ticketData.backgroundColor}
+                      onChange={(e) => handleTicketUpdate({ backgroundColor: e.target.value })}
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text
+                    </label>
+                    <input
+                      type="color"
+                      value={ticketData.textColor}
+                      onChange={(e) => handleTicketUpdate({ textColor: e.target.value })}
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Accent
+                    </label>
+                    <input
+                      type="color"
+                      value={ticketData.accentColor}
+                      onChange={(e) => handleTicketUpdate({ accentColor: e.target.value })}
+                      className="w-full h-10 border border-gray-300 rounded-md cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Batch Export Controls */}
+            <TicketControls
+              onExport={handleExport}
+              isExporting={exportProgress.status === 'exporting' || exportProgress.status === 'zipping'}
+            />
           </div>
-        </details>
-
-        {/* Quick Links */}
-        <div className="mt-8 flex justify-center gap-4 text-sm">
-          <Link
-            href="/sub-recipes/new"
-            className="text-emerald-600 hover:text-emerald-700 font-medium"
-          >
-            ➕ Add Recipe Manually
-          </Link>
-          <span className="text-gray-400">|</span>
-          <Link
-            href="/sub-recipes"
-            className="text-emerald-600 hover:text-emerald-700 font-medium"
-          >
-            Sub-Recipes
-          </Link>
-          <span className="text-gray-400">|</span>
-          <Link
-            href="/final-dishes"
-            className="text-emerald-600 hover:text-emerald-700 font-medium"
-          >
-            Final Dishes
-          </Link>
         </div>
-        </main>
-
-        {/* Modal for errors/confirmations */}
-        <Modal
-          isOpen={modal.isOpen}
-          onClose={() => setModal({ ...modal, isOpen: false })}
-          onConfirm={modal.onConfirm}
-          title={modal.title}
-          message={modal.message}
-          type={modal.type}
-        />
       </div>
-    </MobileRestrict>
+
+      {/* Export Progress Modal */}
+      <BatchExportProgress
+        progress={exportProgress}
+        onCancel={handleCancelExport}
+        isOpen={showProgress}
+        onClose={handleCloseProgress}
+      />
+    </div>
   )
 }
