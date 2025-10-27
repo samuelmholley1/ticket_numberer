@@ -6,41 +6,9 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Gather Kitchen - Nutrition Label Calculator',
-  description: 'Create FDA-compliant nutrition labels for your recipes. Search 400,000+ USDA foods, build sub-recipes, and generate professional nutrition facts labels.',
-  manifest: '/site.webmanifest',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: '32x32' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
-    ],
-    other: [
-      { rel: 'android-chrome', url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { rel: 'android-chrome', url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }
-    ]
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Gather Kitchen'
-  },
-  other: {
-    'mobile-web-app-capable': 'yes' // Replaces deprecated apple-mobile-web-app-capable
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'Gather Kitchen',
-    title: 'Gather Kitchen - Nutrition Label Calculator',
-    description: 'Create FDA-compliant nutrition labels for your recipes',
-  },
-  keywords: ['nutrition', 'label', 'calculator', 'FDA', 'USDA', 'recipe', 'food', 'ingredients', 'nutrition facts']
+  title: 'Ticket Builder - Batch Export Tool',
+  description: 'Create and export custom tickets in bulk. Generate PNG, JPEG, and PDF tickets with flexible numbering and professional layouts.',
+  manifest: '/site.webmanifest'
 }
 
 export const viewport: Viewport = {
@@ -48,7 +16,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#059669',
+  themeColor: '#3b82f6', // Blue theme for ticket builder
   viewportFit: 'cover'
 }
 
