@@ -110,7 +110,7 @@ URL: ${window.location.href}
             </h1>
 
             <p className="text-gray-600 mb-4">
-              An unexpected error occurred. This has been logged and we'll look into it.
+              An unexpected error occurred. This has been logged and we&apos;ll look into it.
             </p>
 
             <details className="mb-4">

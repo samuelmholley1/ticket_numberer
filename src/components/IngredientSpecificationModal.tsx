@@ -88,7 +88,7 @@ export default function IngredientSpecificationModal({
 
         {!selectedVariety && (
           <p className="mt-3 text-sm text-gray-500 text-center">
-            If you skip, we'll use "medium {ingredient.baseIngredient || ingredient.unit}" as default
+            If you skip, we&apos;ll use &quot;medium {ingredient.baseIngredient || ingredient.unit}&quot; as default
           </p>
         )}
       </div>

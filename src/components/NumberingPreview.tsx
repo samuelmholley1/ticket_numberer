@@ -175,7 +175,7 @@ export function NumberingPreview({
 
             {/* Message */}
             <p className="mt-2 text-center text-sm text-gray-600">
-              You're about to generate {ticketCount} numbered tickets. Here's a preview of ticket #{formatNumber(settings.startNumber, settings.numberFormat)}.
+              You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatNumber(settings.startNumber, settings.numberFormat)}.
             </p>
 
             <div className="mt-6 space-y-4">
