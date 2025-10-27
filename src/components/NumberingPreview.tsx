@@ -151,7 +151,7 @@ export function NumberingPreview({
           aria-modal="true"
           aria-labelledby="preview-title"
           tabIndex={-1}
-          className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
+          className="relative w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
         >
           <div className="p-6">
             {/* Title */}
@@ -169,7 +169,7 @@ export function NumberingPreview({
 
             <div className="mt-6 space-y-4">
               {/* Preview Image */}
-              <div className="border rounded-lg overflow-hidden bg-gray-50">
+              <div className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
                 {isGenerating ? (
                   <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
@@ -179,7 +179,8 @@ export function NumberingPreview({
                   <img
                     src={previewDataUrl}
                     alt="Ticket preview"
-                    className="w-full h-auto max-h-64 object-contain"
+                    className="w-full h-auto object-contain"
+                    style={{ maxHeight: '60vh' }}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-64 text-gray-500">
