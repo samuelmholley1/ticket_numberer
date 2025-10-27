@@ -44,3 +44,37 @@ export function estimateZipSize(dataUrls: string[]): number {
   const averageDataUrlSize = 100000 // 100KB average per ticket
   return dataUrls.length * averageDataUrlSize * 1.5
 }
+
+export async function exportTicketWithNumber(
+  imageSrc: string,
+  number: string,
+  position: { x: number; y: number },
+  ticketWidth: number = 600, // 2" at 300 DPI
+  ticketHeight: number = 1500 // 5" at 300 DPI
+): Promise<string> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = ticketWidth
+    canvas.height = ticketHeight
+    const ctx = canvas.getContext('2d')!
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      // Draw the background image
+      ctx.drawImage(img, 0, 0, ticketWidth, ticketHeight)
+
+      // Draw the number
+      ctx.fillStyle = 'black'
+      ctx.font = 'bold 48px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(number, position.x, position.y)
+
+      // Convert to data URL
+      const dataUrl = canvas.toDataURL('image/png', 0.98)
+      resolve(dataUrl)
+    }
+    img.src = imageSrc
+  })
+}
