@@ -18,7 +18,8 @@ interface ExportProgressProps {
     fontColor: string
   }
   imageSrc: string
-  position: { x: number; y: number }
+  imageDimensions: { width: number; height: number } | null
+  position: { fx: number; fy: number }
 }
 
 interface TicketProgress {
@@ -91,18 +92,22 @@ export function ExportProgress({
       img.src = imageSrc
     })
 
-    // Draw the background image
+    // Draw the background image at exact dimensions
     ctx.drawImage(img, 0, 0, exportSettings.ticketWidth, exportSettings.ticketHeight)
 
-    // Draw the number
+    // Draw the number using normalized coordinates
     ctx.fillStyle = exportSettings.fontColor
     ctx.font = `bold ${exportSettings.fontSize}px Arial`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
+    // Convert normalized position to absolute pixels
+    const x = Math.round(position.fx * exportSettings.ticketWidth)
+    const y = Math.round(position.fy * exportSettings.ticketHeight)
+
     const ticketNumber = exportSettings.startNumber + ticketIndex
     const formattedNumber = formatNumber(ticketNumber, exportSettings.numberFormat)
-    ctx.fillText(formattedNumber, position.x, position.y)
+    ctx.fillText(formattedNumber, x, y)
 
     // Convert to data URL
     return canvas.toDataURL('image/png', 0.98)

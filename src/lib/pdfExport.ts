@@ -1,68 +1,211 @@
-import jsPDF from 'jspdf'
-import { TicketData } from '@/types/ticket'
+/**
+ * PDF Export utilities for print-ready ticket output
+ * Supports single-ticket multi-page and 8-up US Letter formats
+ */
 
-export async function exportTicketAsPDF(
-  imageDataUrl: string,
-  ticketData: TicketData
-): Promise<Blob> {
-  // Create PDF with exact 2" x 5" dimensions at 300 DPI
-  // 2" x 5" = 600 x 1500 pixels at 300 DPI
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'px',
-    format: [600, 1500], // Exact pixel dimensions
-    compress: true
-  })
+import { PDFDocument, rgb } from 'pdf-lib'
+import { renderTicketToDataUrl, formatTicketNumber } from './ticketRenderer'
 
-  // Convert data URL to image and add to PDF
-  const img = new Image()
-  img.src = imageDataUrl
-
-  await new Promise((resolve) => {
-    img.onload = resolve
-  })
-
-  // Add image to PDF at exact dimensions
-  pdf.addImage(img, 'PNG', 0, 0, 600, 1500)
-
-  // Add metadata
-  pdf.setProperties({
-    title: `Ticket ${ticketData.number}`,
-    subject: ticketData.title || 'Ticket',
-    creator: 'Ticket Builder',
-    keywords: 'ticket, print'
-  })
-
-  return pdf.output('blob')
+export interface PDFExportSettings {
+  imageSrc: string
+  totalTickets: number
+  startNumber: number
+  numberFormat: string
+  width: number // Image width in pixels
+  height: number // Image height in pixels
+  fx: number // Normalized x position
+  fy: number // Normalized y position
+  fontSize: number
+  fontColor: string
+  fontFamily?: string
 }
 
-export async function createMultiPagePDF(
-  imageDataUrls: string[],
-  filename: string = 'tickets.pdf'
-): Promise<void> {
-  if (imageDataUrls.length === 0) return
+/**
+ * Export tickets as single-ticket multi-page PDF
+ * One ticket per page at exact dimensions
+ */
+export async function exportSingleTicketPDF(
+  settings: PDFExportSettings,
+  onProgress?: (current: number, total: number) => void
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create()
 
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'px',
-    format: [600, 1500],
-    compress: true
-  })
+  // Calculate page size in points (1 inch = 72 points)
+  const dpi = 300
+  const widthInches = settings.width / dpi
+  const heightInches = settings.height / dpi
+  const pageWidthPt = widthInches * 72
+  const pageHeightPt = heightInches * 72
 
-  for (let i = 0; i < imageDataUrls.length; i++) {
-    if (i > 0) {
-      pdf.addPage([600, 1500])
-    }
+  for (let i = 0; i < settings.totalTickets; i++) {
+    const ticketNumber = settings.startNumber + i
 
-    const img = new Image()
-    img.src = imageDataUrls[i]
-
-    await new Promise((resolve) => {
-      img.onload = resolve
+    // Render ticket
+    const dataUrl = await renderTicketToDataUrl(settings.imageSrc, ticketNumber, {
+      width: settings.width,
+      height: settings.height,
+      fx: settings.fx,
+      fy: settings.fy,
+      fontSize: settings.fontSize,
+      fontColor: settings.fontColor,
+      fontFamily: settings.fontFamily,
+      numberFormat: settings.numberFormat,
+      startNumber: settings.startNumber
     })
 
-    pdf.addImage(img, 'PNG', 0, 0, 600, 1500)
+    // Add page
+    const page = pdfDoc.addPage([pageWidthPt, pageHeightPt])
+
+    // Embed PNG
+    const pngImageBytes = await fetch(dataUrl).then(res => res.arrayBuffer())
+    const pngImage = await pdfDoc.embedPng(pngImageBytes)
+
+    // Draw image to fill entire page
+    page.drawImage(pngImage, {
+      x: 0,
+      y: 0,
+      width: pageWidthPt,
+      height: pageHeightPt
+    })
+
+    if (onProgress) {
+      onProgress(i + 1, settings.totalTickets)
+    }
   }
 
-  pdf.save(filename)
+  return await pdfDoc.save()
+}
+
+/**
+ * Export tickets as 8-up US Letter PDF with crop marks
+ * 4 columns × 2 rows per page
+ */
+export async function export8UpLetterPDF(
+  settings: PDFExportSettings,
+  onProgress?: (current: number, total: number) => void
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create()
+
+  // US Letter size in points
+  const pageWidthPt = 612 // 8.5"
+  const pageHeightPt = 792 // 11"
+
+  // Calculate ticket dimensions in points
+  const dpi = 300
+  const widthInches = settings.width / dpi
+  const heightInches = settings.height / dpi
+  const ticketWidthPt = widthInches * 72
+  const ticketHeightPt = heightInches * 72
+
+  // Calculate grid layout
+  const cols = 4
+  const rows = 2
+  const ticketsPerPage = cols * rows
+
+  // Calculate margins to center the grid
+  const totalGridWidth = cols * ticketWidthPt
+  const totalGridHeight = rows * ticketHeightPt
+  const marginX = (pageWidthPt - totalGridWidth) / 2
+  const marginY = (pageHeightPt - totalGridHeight) / 2
+
+  // Pre-render all tickets
+  const renderedTickets: string[] = []
+  for (let i = 0; i < settings.totalTickets; i++) {
+    const ticketNumber = settings.startNumber + i
+    const dataUrl = await renderTicketToDataUrl(settings.imageSrc, ticketNumber, {
+      width: settings.width,
+      height: settings.height,
+      fx: settings.fx,
+      fy: settings.fy,
+      fontSize: settings.fontSize,
+      fontColor: settings.fontColor,
+      fontFamily: settings.fontFamily,
+      numberFormat: settings.numberFormat,
+      startNumber: settings.startNumber
+    })
+    renderedTickets.push(dataUrl)
+    
+    if (onProgress) {
+      onProgress(i + 1, settings.totalTickets)
+    }
+  }
+
+  // Layout tickets on pages
+  const totalPages = Math.ceil(settings.totalTickets / ticketsPerPage)
+
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+    const page = pdfDoc.addPage([pageWidthPt, pageHeightPt])
+
+    const startTicket = pageIndex * ticketsPerPage
+    const endTicket = Math.min(startTicket + ticketsPerPage, settings.totalTickets)
+
+    for (let i = startTicket; i < endTicket; i++) {
+      const positionOnPage = i - startTicket
+      const col = positionOnPage % cols
+      const row = Math.floor(positionOnPage / cols)
+
+      // Calculate position (Y is from bottom in PDF)
+      const x = marginX + col * ticketWidthPt
+      const y = pageHeightPt - marginY - (row + 1) * ticketHeightPt
+
+      // Embed and draw ticket
+      const pngImageBytes = await fetch(renderedTickets[i]).then(res => res.arrayBuffer())
+      const pngImage = await pdfDoc.embedPng(pngImageBytes)
+
+      page.drawImage(pngImage, {
+        x,
+        y,
+        width: ticketWidthPt,
+        height: ticketHeightPt
+      })
+
+      // Draw crop marks (light gray, 0.25pt stroke)
+      const cropMarkLength = 18 // 0.25"
+      const cropMarkOffset = 2 // 2pt from edge
+
+      page.drawLine({
+        start: { x: x - cropMarkOffset, y: y + ticketHeightPt },
+        end: { x: x - cropMarkOffset - cropMarkLength, y: y + ticketHeightPt },
+        thickness: 0.25,
+        color: rgb(0.5, 0.5, 0.5)
+      })
+
+      page.drawLine({
+        start: { x: x, y: y + ticketHeightPt + cropMarkOffset },
+        end: { x: x, y: y + ticketHeightPt + cropMarkOffset + cropMarkLength },
+        thickness: 0.25,
+        color: rgb(0.5, 0.5, 0.5)
+      })
+
+      page.drawLine({
+        start: { x: x + ticketWidthPt + cropMarkOffset, y: y + ticketHeightPt },
+        end: { x: x + ticketWidthPt + cropMarkOffset + cropMarkLength, y: y + ticketHeightPt },
+        thickness: 0.25,
+        color: rgb(0.5, 0.5, 0.5)
+      })
+
+      page.drawLine({
+        start: { x: x, y: y - cropMarkOffset },
+        end: { x: x, y: y - cropMarkOffset - cropMarkLength },
+        thickness: 0.25,
+        color: rgb(0.5, 0.5, 0.5)
+      })
+    }
+  }
+
+  return await pdfDoc.save()
+}
+
+/**
+ * Download a PDF file
+ */
+export function downloadPDF(pdfBytes: Uint8Array, filename: string): void {
+  // @ts-ignore - TypeScript has issues with Uint8Array in Blob constructor but it works correctly
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }

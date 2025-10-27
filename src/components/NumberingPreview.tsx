@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 
 interface NumberingPreviewProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: (settings: ExportSettings) => void
   imageSrc: string
-  position: { x: number; y: number }
+  imageDimensions: { width: number; height: number } | null
+  position: { fx: number; fy: number }
   ticketCount: number
   numberFormat: string
 }
@@ -28,17 +28,23 @@ export function NumberingPreview({
   onClose,
   onConfirm,
   imageSrc,
+  imageDimensions,
   position,
   ticketCount,
   numberFormat
 }: NumberingPreviewProps) {
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  
+  // Get actual image dimensions or use defaults
+  const imgWidth = imageDimensions?.width || 600
+  const imgHeight = imageDimensions?.height || 1500
+  
   const [settings, setSettings] = useState<ExportSettings>({
     startNumber: 1,
     numberFormat,
-    ticketWidth: 600,
-    ticketHeight: 1500,
+    ticketWidth: imgWidth,
+    ticketHeight: imgHeight,
     fontSize: 48,
     fontColor: '#000000'
   })
@@ -91,18 +97,22 @@ export function NumberingPreview({
         img.src = imageSrc
       })
 
-      // Draw the background image
+      // Draw the background image at exact dimensions
       ctx.drawImage(img, 0, 0, settings.ticketWidth, settings.ticketHeight)
 
-      // Draw the number
+      // Draw the number using normalized coordinates
       ctx.fillStyle = settings.fontColor
       ctx.font = `bold ${settings.fontSize}px Arial`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
 
+      // Convert normalized position to absolute pixels
+      const x = Math.round(position.fx * settings.ticketWidth)
+      const y = Math.round(position.fy * settings.ticketHeight)
+
       // Format the preview number
       const previewNumber = formatNumber(settings.startNumber, settings.numberFormat)
-      ctx.fillText(previewNumber, position.x, position.y)
+      ctx.fillText(previewNumber, x, y)
 
       // Convert to data URL
       const dataUrl = canvas.toDataURL('image/png', 0.98)
@@ -153,28 +163,16 @@ export function NumberingPreview({
           className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
         >
           <div className="p-6">
-            {/* Logo */}
-            <div className="flex justify-center mb-4">
-              <Image
-                src="/gather_logo.png"
-                alt="Gather Kitchen"
-                width={120}
-                height={48}
-                className="h-12 w-auto"
-                priority
-              />
-            </div>
-
             {/* Title */}
             <h3
               id="preview-title"
-              className="text-center text-lg font-bold text-gray-900"
+              className="text-center text-2xl font-bold text-gray-900 mb-2"
             >
               Preview Numbered Tickets
             </h3>
 
             {/* Message */}
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600">
               You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatNumber(settings.startNumber, settings.numberFormat)}.
             </p>
 

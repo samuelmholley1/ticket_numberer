@@ -5,8 +5,9 @@ import { toPng } from 'html-to-image'
 interface CanvaImportProps {
   onImageUpload: (file: File) => void
   uploadedImage: string | null
-  numberPosition: { x: number; y: number }
-  onPositionChange: (position: { x: number; y: number }) => void
+  imageDimensions: { width: number; height: number } | null
+  numberPosition: { fx: number; fy: number }
+  onPositionChange: (position: { fx: number; fy: number }) => void
 }
 
 type UploadState = 'idle' | 'uploading' | 'processing' | 'error' | 'success'
@@ -19,10 +20,12 @@ interface UploadError {
 export function CanvaImport({
   onImageUpload,
   uploadedImage,
+  imageDimensions,
   numberPosition,
   onPositionChange,
 }: CanvaImportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [uploadError, setUploadError] = useState<UploadError | null>(null)
@@ -250,22 +253,42 @@ export function CanvaImport({
 
           <div className="relative inline-block border rounded-lg overflow-hidden">
             <img
+              ref={imageRef}
               src={uploadedImage}
               alt="Canva design"
               className="max-w-full h-auto cursor-crosshair"
               onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const x = e.clientX - rect.left
-                const y = e.clientY - rect.top
-                onPositionChange({ x, y })
+                const img = e.currentTarget
+                const rect = img.getBoundingClientRect()
+                const clickX = e.clientX - rect.left
+                const clickY = e.clientY - rect.top
+                
+                // Get natural dimensions
+                const imgW = img.naturalWidth
+                const imgH = img.naturalHeight
+                
+                // Compute contain fit matrix
+                const scale = Math.min(rect.width / imgW, rect.height / imgH)
+                const offsetX = Math.floor((rect.width - imgW * scale) / 2)
+                const offsetY = Math.floor((rect.height - imgH * scale) / 2)
+                
+                // Convert screen click to image coordinates
+                const imgX = (clickX - offsetX) / scale
+                const imgY = (clickY - offsetY) / scale
+                
+                // Store as normalized fractions
+                const fx = imgX / imgW
+                const fy = imgY / imgH
+                
+                onPositionChange({ fx, fy })
               }}
             />
-            {numberPosition && (
+            {numberPosition && imageDimensions && (
               <div
                 className="absolute text-4xl font-bold text-black bg-white bg-opacity-80 px-2 py-1 rounded pointer-events-none"
                 style={{
-                  left: numberPosition.x,
-                  top: numberPosition.y,
+                  left: `${numberPosition.fx * 100}%`,
+                  top: `${numberPosition.fy * 100}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
               >

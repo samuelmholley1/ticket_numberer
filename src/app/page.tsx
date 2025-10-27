@@ -12,7 +12,9 @@ import { exportTicketWithNumber } from '@/lib/zipExport'
 export default function TicketBuilder() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [numberPosition, setNumberPosition] = useState({ x: 300, y: 750 }) // Center bottom
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null)
+  // Store normalized coordinates (0-1 range)
+  const [numberPosition, setNumberPosition] = useState<{ fx: number; fy: number }>({ fx: 0.5, fy: 0.5 })
   const [count, setCount] = useState(3)
   const [numberFormat, setNumberFormat] = useState('001')
   const [isExporting, setIsExporting] = useState(false)
@@ -32,12 +34,22 @@ export default function TicketBuilder() {
       setUploadedFile(file)
       const reader = new FileReader()
       reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string)
+        const dataUrl = e.target?.result as string
+        setUploadedImage(dataUrl)
+        
+        // Load image to get natural dimensions
+        const img = new Image()
+        img.onload = () => {
+          setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight })
+          console.log(`Image loaded: ${img.naturalWidth}×${img.naturalHeight}px`)
+        }
+        img.src = dataUrl
       }
       reader.readAsDataURL(file)
     } else {
       setUploadedImage(null)
       setUploadedFile(null)
+      setImageDimensions(null)
     }
   }, [])
 
@@ -116,6 +128,7 @@ export default function TicketBuilder() {
           <CanvaImport
             onImageUpload={handleImageUpload}
             uploadedImage={uploadedImage}
+            imageDimensions={imageDimensions}
             numberPosition={numberPosition}
             onPositionChange={setNumberPosition}
           />
@@ -174,7 +187,7 @@ export default function TicketBuilder() {
           )}
 
           {/* Preview Section */}
-          {uploadedImage && (
+          {uploadedImage && imageDimensions && (
             <div className="bg-white rounded-lg shadow p-6 space-y-4">
               <h3 className="text-lg font-semibold">Position Preview</h3>
               <div className="text-sm text-gray-600">
@@ -189,8 +202,8 @@ export default function TicketBuilder() {
                 <div
                   className="absolute text-4xl font-bold text-black bg-white bg-opacity-80 px-2 py-1 rounded pointer-events-none"
                   style={{
-                    left: numberPosition.x,
-                    top: numberPosition.y,
+                    left: `${numberPosition.fx * 100}%`,
+                    top: `${numberPosition.fy * 100}%`,
                     transform: 'translate(-50%, -50%)',
                   }}
                 >
@@ -198,7 +211,7 @@ export default function TicketBuilder() {
                 </div>
               </div>
               <div className="text-xs text-gray-500 text-center">
-                600×1500px (2″×5″ @ 300 DPI) • Position: ({numberPosition.x}, {numberPosition.y})
+                {imageDimensions.width}×{imageDimensions.height}px • Position: ({Math.round(numberPosition.fx * 100)}%, {Math.round(numberPosition.fy * 100)}%)
               </div>
             </div>
           )}
@@ -211,6 +224,7 @@ export default function TicketBuilder() {
         onClose={() => setShowPreview(false)}
         onConfirm={handlePreviewConfirm}
         imageSrc={uploadedImage || ''}
+        imageDimensions={imageDimensions}
         position={numberPosition}
         ticketCount={count}
         numberFormat={numberFormat}
@@ -229,6 +243,7 @@ export default function TicketBuilder() {
           onError={handleExportError}
           exportSettings={exportSettings}
           imageSrc={uploadedImage || ''}
+          imageDimensions={imageDimensions}
           position={numberPosition}
         />
       )}
