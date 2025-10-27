@@ -1,0 +1,102 @@
+# Code Citations
+
+## License: MIT
+https://github.com/dreamyguy/gitinsight/blob/e195b7035fac141eb18b27fd8455f634cb71ef25/frontend/src/components/primitives/Icon/DocumentDownload.js
+
+```
+) : (
+            <>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg
+```
+
+
+## License: unknown
+https://github.com/calebrussel77/e-commerce-shop/blob/fdc711b62e058b648e2a5d39386b203b426632f0/frontend/src/pages/PlaceOrder/PlaceOrder.tsx
+
+```
+) : (
+            <>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg
+```
+
+
+## License: GPL-2.0
+https://github.com/specify/specify7/blob/81d7139a237ce1bfeb622a11d7ca9d9776f7e4f3/specifyweb/frontend/js_src/lib/components/icons.tsx
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: GPL-2.0
+https://github.com/specify/specify7/blob/81d7139a237ce1bfeb622a11d7ca9d9776f7e4f3/specifyweb/frontend/js_src/lib/components/Atoms/Icons.tsx
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: GPL-3.0
+https://github.com/ethibox/ethibox/blob/a737e464f071f772f229f553a0e0974fd8548de3/src/pages/resetpassword.js
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: unknown
+https://github.com/aggressivepixels/aggressivepixels.github.io/blob/c379c1660856922e582974e2f40bb9083853ea61/components/icons/check-filled.tsx
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: MIT
+https://github.com/farhan2077/symbols-search/blob/ae536cb87a8df955cfa095ca36b2f693febf8245/pages/index.js
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: unknown
+https://github.com/pioneiro/gigaland/blob/9635671c250b2fde068d015f322cedb97b010bfe/src/components/Collection.jsx
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+
+
+## License: unknown
+https://github.com/ibrahimshanaa2002/E-commerce-2024-website/blob/4b08d018e04238d387cfe99ce2c5bb41d66efc33/frontend/src/components/ReviewsCard/ReviewsCard.jsx
+
+```
+-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm
+```
+

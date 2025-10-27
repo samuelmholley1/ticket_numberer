@@ -14,8 +14,8 @@ export default function TicketBuilder() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null)
-  // Store normalized coordinates (0-1 range)
-  const [numberPosition, setNumberPosition] = useState<{ fx: number; fy: number }>({ fx: 0.5, fy: 0.5 })
+  // Store normalized coordinates (0-1 range) - default to bottom-right for typical ticket numbering
+  const [numberPosition, setNumberPosition] = useState<{ fx: number; fy: number }>({ fx: 0.95, fy: 0.94 })
   const [count, setCount] = useState(3)
   const [numberFormat, setNumberFormat] = useState('001')
   const [isExporting, setIsExporting] = useState(false)

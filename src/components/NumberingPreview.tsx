@@ -42,8 +42,9 @@ export function NumberingPreview({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [dragPosition, setDragPosition] = useState<{ fx: number; fy: number } | null>(null)
-  const [isEditingLocation, setIsEditingLocation] = useState(true)
+  const [isEditingLocation, setIsEditingLocation] = useState(false) // Default to saved/preview mode
   const [imageHeight, setImageHeight] = useState<number>(400)
+  const [imageTop, setImageTop] = useState<number>(0)
   const previewImageRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
@@ -107,26 +108,33 @@ export function NumberingPreview({
 
   // Match slider height to actual rendered image height
   useEffect(() => {
-    const updateImageHeight = () => {
+    const updateImageDimensions = () => {
       if (!previewImageRef.current) return
       const img = previewImageRef.current.querySelector('img')
       if (img) {
-        const height = img.getBoundingClientRect().height
-        setImageHeight(Math.max(100, Math.round(height)))
+        const rect = img.getBoundingClientRect()
+        const containerRect = previewImageRef.current.getBoundingClientRect()
+        setImageHeight(Math.max(100, Math.round(rect.height)))
+        setImageTop(Math.round(rect.top - containerRect.top))
       }
     }
     
     if (isOpen && previewDataUrl) {
       // Wait for image to render
-      setTimeout(updateImageHeight, 100)
+      setTimeout(updateImageDimensions, 100)
       
       // Set up observer for dynamic updates
-      const observer = new ResizeObserver(updateImageHeight)
+      const observer = new ResizeObserver(updateImageDimensions)
       if (previewImageRef.current) {
         observer.observe(previewImageRef.current)
       }
       
-      return () => observer.disconnect()
+      window.addEventListener('resize', updateImageDimensions)
+      
+      return () => {
+        observer.disconnect()
+        window.removeEventListener('resize', updateImageDimensions)
+      }
     }
   }, [isOpen, previewDataUrl])
 
@@ -188,7 +196,7 @@ export function NumberingPreview({
     const fx = Math.max(0, Math.min(1, x / rect.width))
     const fy = Math.max(0, Math.min(1, y / rect.height))
     
-    // Update temporary drag position without triggering preview regeneration
+    // Update temporary drag position for live preview
     setDragPosition({ fx, fy })
   }
 
@@ -199,6 +207,29 @@ export function NumberingPreview({
       setDragPosition(null)
     }
     setIsDragging(false)
+  }
+  
+  // Calculate smart hint text position to avoid cutoff
+  const getHintPosition = (fx: number, fy: number) => {
+    // Default: right of text box
+    let translateX = '20px'
+    let translateY = '-50%'
+    
+    // If too far right (> 70%), position to the left
+    if (fx > 0.7) {
+      translateX = 'calc(-100% - 20px)'
+    }
+    
+    // If too close to top (< 15%), position below
+    if (fy < 0.15) {
+      translateY = '20px'
+    }
+    // If too close to bottom (> 85%), position above
+    else if (fy > 0.85) {
+      translateY = 'calc(-100% - 20px)'
+    }
+    
+    return { translateX, translateY }
   }
 
   const handleConfirm = () => {
@@ -244,8 +275,8 @@ export function NumberingPreview({
               {/* Preview Image with Position Controls */}
               <div className="flex gap-4 items-start">
                 {/* Y-axis slider on the left - aligned with image */}
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs font-medium text-gray-700">Position Y</span>
+                <div className="flex flex-col items-center gap-2" style={{ marginTop: `${imageTop}px` }}>
+                  <span className="text-xs font-medium text-gray-700 mb-1">Position Y</span>
                   <input
                     type="range"
                     min="0"
@@ -257,7 +288,7 @@ export function NumberingPreview({
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: `${imageHeight}px` }}
                     disabled={!isEditingLocation}
                   />
-                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
+                  <span className="text-xs text-gray-500 mt-1">{Math.round(settings.fy * 100)}%</span>
                   
                   {/* Numeric input for precise positioning */}
                   {isEditingLocation && (
@@ -319,19 +350,38 @@ export function NumberingPreview({
                           </div>
                         )}
                         
-                        {/* Cursor hint text next to text box */}
-                        {!isDragging && isEditingLocation && (
+                        {/* Live drag preview - show number at cursor position */}
+                        {isDragging && dragPosition && (
                           <div
-                            className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs pointer-events-none"
+                            className="absolute pointer-events-none"
                             style={{
-                              left: `${settings.fx * 100}%`,
-                              top: `${settings.fy * 100}%`,
-                              transform: 'translate(20px, -50%)' // Position to the right of the text box
+                              left: `${dragPosition.fx * 100}%`,
+                              top: `${dragPosition.fy * 100}%`,
+                              transform: 'translate(-50%, -50%)'
                             }}
                           >
-                            Click here to adjust position
+                            <span className="text-sm font-bold text-gray-800 bg-white bg-opacity-50 px-2 py-1 rounded">
+                              {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                            </span>
                           </div>
                         )}
+                        
+                        {/* Cursor hint text - smart positioning */}
+                        {!isDragging && isEditingLocation && (() => {
+                          const { translateX, translateY } = getHintPosition(settings.fx, settings.fy)
+                          return (
+                            <div
+                              className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs pointer-events-none whitespace-nowrap"
+                              style={{
+                                left: `${settings.fx * 100}%`,
+                                top: `${settings.fy * 100}%`,
+                                transform: `translate(${translateX}, ${translateY})`
+                              }}
+                            >
+                              Click here to adjust position
+                            </div>
+                          )
+                        })()}
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-64 text-gray-500">
