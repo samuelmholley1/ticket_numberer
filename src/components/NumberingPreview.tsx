@@ -62,7 +62,7 @@ export function NumberingPreview({
     fontSize: 48,
     fontColor: '#000000',
     fontFamily: 'Arial',
-    exportFormat: 'zip'
+    exportFormat: 'pdf'
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -476,7 +476,7 @@ export function NumberingPreview({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="zip">ZIP (All tickets in one file)</option>
-                    <option value="pdf">PDF (3-up US Letter, print-ready)</option>
+                    <option value="pdf">PDFs (3-up US Letter, print-ready)</option>
                     <option value="individual">Individual PNGs (Download separately)</option>
                   </select>
                 </div>
@@ -517,7 +517,7 @@ export function NumberingPreview({
                 className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
               >
                 {settings.exportFormat === 'zip' && 'Generate ZIP'}
-                {settings.exportFormat === 'pdf' && 'Generate PDF'}
+                {settings.exportFormat === 'pdf' && 'Generate PDFs'}
                 {settings.exportFormat === 'individual' && 'Download Individual Files'}
               </button>
             </div>
