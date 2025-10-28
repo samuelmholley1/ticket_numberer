@@ -264,7 +264,14 @@ export default function TicketBuilder() {
                     min="1"
                     max="500"
                     value={count}
-                    onChange={(e) => setCount(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = Number(e.target.value)
+                      const validatedValue = Math.max(1, Math.min(500, value))
+                      if (validatedValue !== value && value !== 0) {
+                        toast.warning('Value Adjusted', 'Ticket count adjusted to valid range (1-500)')
+                      }
+                      setCount(validatedValue)
+                    }}
                     disabled={isExporting}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />

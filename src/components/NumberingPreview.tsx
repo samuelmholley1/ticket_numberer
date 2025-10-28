@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { renderTicketToDataUrl, formatTicketNumber } from '@/lib/ticketRenderer'
+import { toast } from '@/components/Toast'
 
 interface NumberingPreviewProps {
   isOpen: boolean
@@ -319,7 +320,7 @@ export function NumberingPreview({
                   
                   <div 
                     ref={previewImageRef}
-                    className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative"
+                    className="border rounded-lg bg-gray-50 flex items-center justify-center relative"
                     style={{ cursor: isDragging ? 'none' : 'crosshair' }}
                     onClick={isEditingLocation ? handlePreviewClick : undefined}
                     onMouseDown={isEditingLocation ? () => setIsDragging(true) : undefined}
@@ -347,8 +348,8 @@ export function NumberingPreview({
                           <div
                             className="absolute pointer-events-none"
                             style={{
-                              left: `${Math.max(10, Math.min(90, (dragPosition?.fx ?? settings.fx) * 100))}%`,
-                              top: `${Math.max(10, Math.min(90, (dragPosition?.fy ?? settings.fy) * 100))}%`,
+                              left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
+                              top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
@@ -413,8 +414,20 @@ export function NumberingPreview({
                   <input
                     type="number"
                     min="1"
+                    max="999999"
                     value={settings.startNumber}
-                    onChange={(e) => setSettings(prev => ({ ...prev, startNumber: parseInt(e.target.value) || 1 }))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1
+                      if (value < 1) {
+                        toast.warning('Start number must be at least 1')
+                        return
+                      }
+                      if (value > 999999) {
+                        toast.warning('Start number cannot exceed 999,999')
+                        return
+                      }
+                      setSettings(prev => ({ ...prev, startNumber: value }))
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -462,7 +475,18 @@ export function NumberingPreview({
                     min="12"
                     max="120"
                     value={settings.fontSize}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fontSize: parseInt(e.target.value) || 48 }))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 48
+                      if (value < 12) {
+                        toast.warning('Font size must be at least 12px')
+                        return
+                      }
+                      if (value > 120) {
+                        toast.warning('Font size cannot exceed 120px')
+                        return
+                      }
+                      setSettings(prev => ({ ...prev, fontSize: value }))
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
