@@ -344,18 +344,7 @@ export function CanvaImport({
                 onPositionChange({ fx, fy })
               }}
             />
-            {numberPosition && imageDimensions && (
-              <div
-                className="absolute text-xs font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded pointer-events-none shadow-lg border-2 border-white"
-                style={{
-                  left: `${numberPosition.fx * 100}%`,
-                  top: `${numberPosition.fy * 100}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                ✓
-              </div>
-            )}
+            {/* Position marker removed - user should refer to the proper rendered preview below */}
           </div>
         </div>
       )}

@@ -46,6 +46,7 @@ export function NumberingPreview({
   const [imageHeight, setImageHeight] = useState<number>(400)
   const [imageTop, setImageTop] = useState<number>(0)
   const previewImageRef = useRef<HTMLDivElement>(null)
+  const previewContainerRef = useRef<HTMLDivElement>(null)
   
   // Get actual image dimensions or use defaults
   const imgWidth = imageDimensions?.width || 600
@@ -109,14 +110,14 @@ export function NumberingPreview({
   // Match slider height to actual rendered image height
   useEffect(() => {
     const updateImageDimensions = () => {
-      if (!previewImageRef.current) return
+      if (!previewImageRef.current || !previewContainerRef.current) return
       const img = previewImageRef.current.querySelector('img')
       if (img) {
         const rect = img.getBoundingClientRect()
-        const containerRect = previewImageRef.current.getBoundingClientRect()
+        const containerRect = previewContainerRef.current.getBoundingClientRect()
         setImageHeight(Math.max(100, Math.round(rect.height)))
-        // Account for the button above the image (button is ~48px + 16px margin)
-        setImageTop(Math.round(rect.top - containerRect.top + 64))
+        // Calculate offset from the flex container (items-start reference point)
+        setImageTop(Math.round(rect.top - containerRect.top))
       }
     }
     
@@ -274,7 +275,7 @@ export function NumberingPreview({
 
             <div className="mt-6 space-y-4">
               {/* Preview Image with Position Controls */}
-              <div className="flex gap-4 items-start">
+              <div ref={previewContainerRef} className="flex gap-4 items-start">
                 {/* Y-axis slider on the left - aligned with image */}
                 <div className="flex flex-col items-center gap-2" style={{ marginTop: `${imageTop}px` }}>
                   <input
@@ -332,49 +333,35 @@ export function NumberingPreview({
                       </div>
                     ) : previewDataUrl ? (
                       <>
-                        {/* Always show the rendered preview ticket */}
+                        {/* Show base image in edit mode, rendered preview in saved mode */}
                         <img
-                          src={previewDataUrl}
+                          src={isEditingLocation ? imageSrc : previewDataUrl}
                           alt="Ticket preview"
                           className="w-full h-auto object-contain pointer-events-none"
                           style={{ maxHeight: '60vh' }}
                         />
                         
-                        {/* Dynamic number overlay - only visible in edit mode and NOT while dragging */}
-                        {isEditingLocation && !isDragging && (
+                        {/* Dynamic number overlay - visible in edit mode (both when idle and dragging) */}
+                        {isEditingLocation && (
                           <div
                             className="absolute pointer-events-none"
                             style={{
-                              left: `${settings.fx * 100}%`,
-                              top: `${settings.fy * 100}%`,
+                              left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
+                              top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
-                            <div className="text-sm font-bold text-transparent border-2 border-dashed border-gray-400 px-3 py-2 rounded">
-                              {formatTicketNumber(settings.startNumber, settings.numberFormat)}
-                            </div>
+                            {isDragging ? (
+                              <div className="text-sm font-bold text-gray-900">
+                                {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                              </div>
+                            ) : (
+                              <div className="text-sm font-bold text-transparent border-2 border-dashed border-gray-400 px-3 py-2 rounded">
+                                {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                              </div>
+                            )}
                           </div>
                         )}
-                        
-                        {/* Dragging number - only visible while actively dragging */}
-                        {isDragging && dragPosition && (
-                          <div
-                            className="absolute pointer-events-none"
-                            style={{
-                              left: `${dragPosition.fx * 100}%`,
-                              top: `${dragPosition.fy * 100}%`,
-                              transform: 'translate(-50%, -50%)'
-                            }}
-                          >
-                            <div className="text-sm font-bold text-gray-900">
-                              {formatTicketNumber(settings.startNumber, settings.numberFormat)}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Position indicator outline - removed, now handled by transparent text box above */}
-                        
-                        {/* Cursor hint text removed - user just wants to see the dashed border */}
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -396,8 +383,9 @@ export function NumberingPreview({
                       disabled={!isEditingLocation}
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
-                      <span>Position X:</span>
-                      <div className="flex items-center gap-0.5">
+                      <span></span>
+                      <div className="flex items-center gap-1">
+                        <span>Position X:</span>
                         <input
                           type="number"
                           min="0"
