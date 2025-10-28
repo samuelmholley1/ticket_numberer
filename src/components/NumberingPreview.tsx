@@ -248,6 +248,7 @@ export function NumberingPreview({
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -257,6 +258,7 @@ export function NumberingPreview({
           role="dialog"
           aria-modal="true"
           aria-labelledby="preview-title"
+          aria-describedby="preview-description"
           tabIndex={-1}
           className="relative w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
         >
@@ -269,8 +271,11 @@ export function NumberingPreview({
               Preview Numbered Tickets
             </h3>
 
-            {/* Message */}
-            <p className="text-center text-sm text-gray-600">
+            {/* Description */}
+            <p
+              id="preview-description"
+              className="text-center text-sm text-gray-600"
+            >
               You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatTicketNumber(settings.startNumber, settings.numberFormat)}.
             </p>
 
@@ -280,6 +285,7 @@ export function NumberingPreview({
                 {/* Y-axis slider on the left - aligned with image */}
                 <div className="flex flex-col items-center gap-2" style={{ marginTop: `${imageTop}px` }}>
                   <input
+                    id="position-y-slider"
                     type="range"
                     min="0"
                     max="1"
@@ -289,10 +295,13 @@ export function NumberingPreview({
                     className="cursor-pointer"
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: `${imageHeight}px` }}
                     disabled={!isEditingLocation}
+                    aria-label="Vertical position of ticket number"
+                    aria-describedby="position-y-help"
                   />
                   <span className="text-xs font-medium text-gray-700 mt-1">Position Y</span>
                   <div className="flex items-center gap-0.5">
                     <input
+                      id="position-y-input"
                       type="number"
                       min="0"
                       max="100"
@@ -301,8 +310,13 @@ export function NumberingPreview({
                       onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) / 100 }))}
                       className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
                       disabled={!isEditingLocation}
+                      aria-label="Vertical position percentage"
+                      aria-describedby="position-y-help"
                     />
                     <span className="text-xs text-gray-500">%</span>
+                  </div>
+                  <div id="position-y-help" className="sr-only">
+                    Adjust the vertical position of the ticket number on the template
                   </div>
                 </div>
 
@@ -313,9 +327,14 @@ export function NumberingPreview({
                     <button
                       onClick={() => setIsEditingLocation(!isEditingLocation)}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                      aria-pressed={isEditingLocation}
+                      aria-describedby="edit-location-help"
                     >
                       {isEditingLocation ? 'Save Number Location' : 'Edit Number Location'}
                     </button>
+                    <div id="edit-location-help" className="sr-only">
+                      Toggle between editing and saving the position of the ticket number on the template
+                    </div>
                   </div>
                   
                   <div 
@@ -327,6 +346,25 @@ export function NumberingPreview({
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handlePreviewDrag}
+                    role={isEditingLocation ? "button" : "img"}
+                    tabIndex={isEditingLocation ? 0 : -1}
+                    aria-label={isEditingLocation ? "Click to position ticket number on template" : "Ticket preview"}
+                    aria-describedby={isEditingLocation ? "preview-position-help" : undefined}
+                    onKeyDown={(e) => {
+                      if (!isEditingLocation) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        // Simulate click at center for keyboard users
+                        const rect = previewImageRef.current?.getBoundingClientRect()
+                        if (rect) {
+                          const fakeEvent = {
+                            clientX: rect.left + rect.width / 2,
+                            clientY: rect.top + rect.height / 2
+                          } as React.MouseEvent<HTMLDivElement>
+                          handlePreviewClick(fakeEvent)
+                        }
+                      }
+                    }}
                   >
                     {isGenerating ? (
                       <div className="flex items-center justify-center h-64">
@@ -372,9 +410,17 @@ export function NumberingPreview({
                     )}
                   </div>
                   
+                  {/* Help text for positioning */}
+                  {isEditingLocation && (
+                    <div id="preview-position-help" className="sr-only">
+                      Click on the image to position the ticket number. Use the sliders below to fine-tune the position.
+                    </div>
+                  )}
+                  
                   {/* X-axis slider below */}
                   <div className="mt-2 flex flex-col items-center gap-1">
                     <input
+                      id="position-x-slider"
                       type="range"
                       min="0"
                       max="1"
@@ -383,12 +429,15 @@ export function NumberingPreview({
                       onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
                       className="w-full cursor-pointer"
                       disabled={!isEditingLocation}
+                      aria-label="Horizontal position of ticket number"
+                      aria-describedby="position-x-help"
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
                       <span></span>
                       <div className="flex items-center gap-1">
                         <span>Position X:</span>
                         <input
+                          id="position-x-input"
                           type="number"
                           min="0"
                           max="100"
@@ -397,21 +446,32 @@ export function NumberingPreview({
                           onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) / 100 }))}
                           className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
                           disabled={!isEditingLocation}
+                          aria-label="Horizontal position percentage"
+                          aria-describedby="position-x-help"
                         />
                         <span>%</span>
                       </div>
+                    </div>
+                    <div id="position-x-help" className="sr-only">
+                      Adjust the horizontal position of the ticket number on the template
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Settings */}
-              <div className="grid grid-cols-2 gap-4">
+              <fieldset className="grid grid-cols-2 gap-4">
+                <legend className="sr-only">Ticket Numbering Settings</legend>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="start-number" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Start Number
                   </label>
                   <input
+                    id="start-number"
                     type="number"
                     min="1"
                     max="999999"
@@ -429,32 +489,49 @@ export function NumberingPreview({
                       setSettings(prev => ({ ...prev, startNumber: value }))
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="start-number-help"
                   />
+                  <div id="start-number-help" className="sr-only">
+                    The number to start numbering tickets from
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="number-format" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Number Format
                   </label>
                   <select
+                    id="number-format"
                     value={settings.numberFormat}
                     onChange={(e) => setSettings(prev => ({ ...prev, numberFormat: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="number-format-help"
                   >
                     <option value="001">001, 002, 003...</option>
                     <option value="0001">0001, 0002, 0003...</option>
                     <option value="1">1, 2, 3...</option>
                   </select>
+                  <div id="number-format-help" className="sr-only">
+                    Choose the numbering format for your tickets
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-family" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Family
                   </label>
                   <select
+                    id="font-family"
                     value={settings.fontFamily}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-family-help"
                   >
                     <option value="Arial">Arial</option>
                     <option value="Helvetica">Helvetica</option>
@@ -464,13 +541,20 @@ export function NumberingPreview({
                     <option value="Courier New">Courier New</option>
                     <option value="Impact">Impact</option>
                   </select>
+                  <div id="font-family-help" className="sr-only">
+                    Select the font family for ticket numbers
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-size" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Size
                   </label>
                   <input
+                    id="font-size"
                     type="number"
                     min="12"
                     max="120"
@@ -488,39 +572,60 @@ export function NumberingPreview({
                       setSettings(prev => ({ ...prev, fontSize: value }))
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-size-help"
                   />
+                  <div id="font-size-help" className="sr-only">
+                    Font size in pixels, between 12 and 120
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="export-format" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Export Format
                   </label>
                   <select
+                    id="export-format"
                     value={settings.exportFormat}
                     onChange={(e) => setSettings(prev => ({ ...prev, exportFormat: e.target.value as 'zip' | 'pdf' | 'individual' }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="export-format-help"
                   >
                     <option value="zip">ZIP (All tickets in one file)</option>
                     <option value="pdf">PDFs (3-up US Letter, print-ready)</option>
                     <option value="individual">Individual PNGs (Download separately)</option>
                   </select>
+                  <div id="export-format-help" className="sr-only">
+                    Choose how to export your numbered tickets
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-color" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Color
                   </label>
                   <input
+                    id="font-color"
                     type="color"
                     value={settings.fontColor}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-color-help"
                   />
+                  <div id="font-color-help" className="sr-only">
+                    Select the color for ticket numbers
+                  </div>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Summary */}
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 p-3 rounded-lg" role="region" aria-labelledby="summary-heading">
+                <h4 id="summary-heading" className="sr-only">Export Summary</h4>
                 <div className="text-sm text-gray-600">
                   <div>Tickets to generate: {ticketCount}</div>
                   <div>Number range: {formatTicketNumber(settings.startNumber, settings.numberFormat)} - {formatTicketNumber(settings.startNumber + ticketCount - 1, settings.numberFormat)}</div>
@@ -534,17 +639,25 @@ export function NumberingPreview({
               <button
                 onClick={onClose}
                 className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                aria-describedby="cancel-help"
               >
                 Cancel
               </button>
+              <div id="cancel-help" className="sr-only">
+                Close this dialog without generating tickets
+              </div>
               <button
                 onClick={handleConfirm}
                 className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                aria-describedby="confirm-help"
               >
                 {settings.exportFormat === 'zip' && 'Generate ZIP'}
                 {settings.exportFormat === 'pdf' && 'Generate PDFs'}
                 {settings.exportFormat === 'individual' && 'Download Individual Files'}
               </button>
+              <div id="confirm-help" className="sr-only">
+                Generate and download the numbered tickets with current settings
+              </div>
             </div>
           </div>
         </div>

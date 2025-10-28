@@ -228,7 +228,7 @@ export default function TicketBuilder() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[840px] mx-auto px-4 py-8 space-y-6">
+        <header className="max-w-[840px] mx-auto px-4 py-8">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-gray-900">
               🎫 Ticket Numberer
@@ -236,11 +236,13 @@ export default function TicketBuilder() {
             <p className="text-gray-600">
               Upload your Canva design (PNG @ 300 DPI) and add sequential numbering
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1" role="note">
               💡 Export from Canva: Share → Download → PNG (Maximum Quality)
             </p>
           </div>
+        </header>
 
+        <main className="max-w-[840px] mx-auto px-4 pb-8 space-y-6" role="main">
           <CanvaImport
             onImageUpload={handleImageUpload}
             uploadedImage={uploadedImage}
@@ -251,71 +253,92 @@ export default function TicketBuilder() {
           />
 
           {uploadedImage && (
-            <div className="bg-white rounded-lg shadow p-6 space-y-4">
-              <h3 className="text-lg font-semibold">Numbering Settings</h3>
+            <section className="bg-white rounded-lg shadow p-6 space-y-4" aria-labelledby="settings-heading">
+              <h2 id="settings-heading" className="text-lg font-semibold">Numbering Settings</h2>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number of Tickets
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="500"
-                    value={count}
-                    onChange={(e) => {
-                      const value = Number(e.target.value)
-                      if (value < 1) {
-                        toast.warning('Ticket count must be at least 1')
-                        return
-                      }
-                      if (value > 500) {
-                        toast.warning('Ticket count cannot exceed 500')
-                        return
-                      }
-                      setCount(value)
-                    }}
-                    disabled={isExporting}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
+              <form className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label 
+                      htmlFor="ticket-count" 
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Number of Tickets
+                    </label>
+                    <input
+                      id="ticket-count"
+                      type="number"
+                      min="1"
+                      max="500"
+                      value={count}
+                      onChange={(e) => {
+                        const value = Number(e.target.value)
+                        if (value < 1) {
+                          toast.warning('Ticket count must be at least 1')
+                          return
+                        }
+                        if (value > 500) {
+                          toast.warning('Ticket count cannot exceed 500')
+                          return
+                        }
+                        setCount(value)
+                      }}
+                      disabled={isExporting}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-describedby="ticket-count-help"
+                    />
+                    <div id="ticket-count-help" className="sr-only">
+                      Enter the number of tickets to generate, between 1 and 500
+                    </div>
+                  </div>
+
+                  <div>
+                    <label 
+                      htmlFor="number-format" 
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Number Format
+                    </label>
+                    <select
+                      id="number-format"
+                      value={numberFormat}
+                      onChange={(e) => setNumberFormat(e.target.value)}
+                      disabled={isExporting}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-describedby="number-format-help"
+                    >
+                      <option value="001">001, 002, 003...</option>
+                      <option value="0001">0001, 0002, 0003...</option>
+                      <option value="1">1, 2, 3...</option>
+                    </select>
+                    <div id="number-format-help" className="sr-only">
+                      Choose the numbering format for your tickets
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number Format
-                  </label>
-                  <select
-                    value={numberFormat}
-                    onChange={(e) => setNumberFormat(e.target.value)}
-                    disabled={isExporting}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="001">001, 002, 003...</option>
-                    <option value="0001">0001, 0002, 0003...</option>
-                    <option value="1">1, 2, 3...</option>
-                  </select>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={isExporting || !uploadedImage}
+                  className="w-full bg-emerald-600 text-white py-3 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                  aria-describedby="export-button-status"
+                >
+                  {isExporting ? 'Generating...' : `Generate ${count} Numbered Tickets`}
+                </button>
+                <div id="export-button-status" className="sr-only" aria-live="polite">
+                  {isExporting ? 'Generating tickets, please wait' : 'Ready to generate tickets'}
                 </div>
-              </div>
 
-              <button
-                onClick={handleExport}
-                disabled={isExporting || !uploadedImage}
-                className="w-full bg-emerald-600 text-white py-3 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-              >
-                {isExporting ? 'Generating...' : `Generate ${count} Numbered Tickets`}
-              </button>
-
-              <p className="text-sm text-gray-500 text-center">
-                Preview: {Array.from({ length: Math.min(count, 5) }, (_, i) =>
-                  formatNumber(i + 1, numberFormat)
-                ).join(', ')}{count > 5 && `... +${count - 5} more`}
-              </p>
-            </div>
+                <output className="text-sm text-gray-500 text-center block" aria-live="polite">
+                  Preview: {Array.from({ length: Math.min(count, 5) }, (_, i) =>
+                    formatNumber(i + 1, numberFormat)
+                  ).join(', ')}{count > 5 && `... +${count - 5} more`}
+                </output>
+              </form>
+            </section>
           )}
-
-          {/* Preview Section - REMOVED, now shown in CanvaImport */}
-        </div>
+        </main>
       </div>
 
       {/* Modals */}

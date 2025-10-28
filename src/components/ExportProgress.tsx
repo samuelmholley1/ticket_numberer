@@ -266,49 +266,88 @@ export function ExportProgress({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50" />
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50"
+        onClick={isGenerating ? undefined : onClose}
+        aria-hidden="true"
+      />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div
+          className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="export-progress-title"
+          aria-describedby="export-progress-description"
+        >
           <div className="p-6">
-            <h3 className="text-center text-lg font-bold text-gray-900 mb-4">
+            {/* Title */}
+            <h3
+              id="export-progress-title"
+              className="text-center text-lg font-bold text-gray-900 mb-4"
+            >
               Generating Tickets
             </h3>
 
+            {/* Description */}
+            <p
+              id="export-progress-description"
+              className="sr-only"
+            >
+              Progress dialog showing the generation of numbered tickets. {completedCount} completed, {errorCount} failed, {totalTickets - completedCount - errorCount} remaining.
+            </p>
+
             {/* Overall Progress */}
-            <div className="mb-6">
+            <div className="mb-6" role="region" aria-labelledby="progress-heading">
+              <h4 id="progress-heading" className="sr-only">Generation Progress</h4>
               <div className="flex justify-between text-sm text-gray-600 mb-2">
                 <span>Progress</span>
-                <span>{completedCount + errorCount} / {totalTickets}</span>
+                <span aria-live="polite" aria-atomic="true">
+                  {completedCount + errorCount} of {totalTickets} tickets processed
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="w-full bg-gray-200 rounded-full h-2"
+                role="progressbar"
+                aria-valuenow={Math.round(progressPercentage)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Generation progress: ${Math.round(progressPercentage)}% complete`}
+              >
                 <div
                   className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>{completedCount} completed</span>
-                <span>{errorCount} errors</span>
+                <span aria-live="polite">{completedCount} completed</span>
+                <span aria-live="polite">{errorCount} errors</span>
               </div>
             </div>
 
             {/* Current Status */}
             {isGenerating && (
-              <div className="text-center mb-4">
+              <div className="text-center mb-4" aria-live="polite" aria-atomic="true">
                 <div className="inline-flex items-center text-sm text-gray-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600 mr-2" aria-hidden="true"></div>
                   Generating ticket #{exportSettings.startNumber + currentIndex}...
                 </div>
               </div>
             )}
 
             {/* Ticket List */}
-            <div className="max-h-60 overflow-y-auto border rounded-lg">
+            <div
+              className="max-h-60 overflow-y-auto border rounded-lg"
+              role="region"
+              aria-labelledby="ticket-list-heading"
+              aria-live="polite"
+              aria-atomic="false"
+            >
+              <h4 id="ticket-list-heading" className="sr-only">Ticket Generation Status</h4>
               <div className="divide-y">
                 {progress.map((ticket) => (
-                  <div key={ticket.index} className="p-3 flex items-center justify-between">
+                  <div key={ticket.index} className="p-3 flex items-center justify-between" role="listitem">
                     <div className="flex items-center">
                       <span className="text-sm font-medium text-gray-900 mr-3">
                         #{formatTicketNumber(exportSettings.startNumber + ticket.index, exportSettings.numberFormat)}
@@ -318,19 +357,20 @@ export function ExportProgress({
                       )}
                       {ticket.status === 'generating' && (
                         <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-600 mr-2"></div>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-600 mr-2" aria-hidden="true"></div>
                           <span className="text-xs text-gray-600">Generating...</span>
                         </div>
                       )}
                       {ticket.status === 'completed' && (
-                        <span className="text-xs text-green-600">✓ Completed</span>
+                        <span className="text-xs text-green-600" aria-label="Completed">✓ Completed</span>
                       )}
                       {ticket.status === 'error' && (
                         <div className="flex items-center">
-                          <span className="text-xs text-red-600 mr-2">✗ Failed</span>
+                          <span className="text-xs text-red-600 mr-2" aria-label="Failed">✗ Failed</span>
                           <button
                             onClick={() => retryTicket(ticket.index)}
-                            className="text-xs text-blue-600 hover:text-blue-800"
+                            className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            aria-label={`Retry generating ticket #${formatTicketNumber(exportSettings.startNumber + ticket.index, exportSettings.numberFormat)}`}
                           >
                             Retry
                           </button>
@@ -338,7 +378,12 @@ export function ExportProgress({
                       )}
                     </div>
                     {ticket.error && (
-                      <div className="text-xs text-red-600 max-w-32 truncate" title={ticket.error}>
+                      <div
+                        className="text-xs text-red-600 max-w-32 truncate"
+                        title={ticket.error}
+                        role="alert"
+                        aria-live="assertive"
+                      >
                         {ticket.error}
                       </div>
                     )}
@@ -353,24 +398,40 @@ export function ExportProgress({
                 <button
                   onClick={retryAllFailed}
                   className="w-full rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                  aria-describedby="retry-all-help"
                 >
                   Retry All Failed ({errorCount})
                 </button>
+              )}
+              {!isGenerating && errorCount > 0 && (
+                <div id="retry-all-help" className="sr-only">
+                  Retry generating all tickets that failed during the previous attempt
+                </div>
               )}
               <div className="flex gap-3">
                 <button
                   onClick={handleCancel}
                   className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  aria-describedby="cancel-progress-help"
                 >
                   {isGenerating ? 'Cancel' : 'Close'}
                 </button>
+                <div id="cancel-progress-help" className="sr-only">
+                  {isGenerating ? 'Stop the current ticket generation process' : 'Close this progress dialog'}
+                </div>
                 {!isGenerating && completedCount > 0 && (
                   <button
                     onClick={onClose}
                     className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                    aria-describedby="done-help"
                   >
                     Done
                   </button>
+                )}
+                {!isGenerating && completedCount > 0 && (
+                  <div id="done-help" className="sr-only">
+                    Close this dialog and proceed with the generated tickets
+                  </div>
                 )}
               </div>
             </div>
