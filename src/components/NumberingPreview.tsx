@@ -115,7 +115,8 @@ export function NumberingPreview({
         const rect = img.getBoundingClientRect()
         const containerRect = previewImageRef.current.getBoundingClientRect()
         setImageHeight(Math.max(100, Math.round(rect.height)))
-        setImageTop(Math.round(rect.top - containerRect.top))
+        // Account for the button above the image (button is ~48px + 16px margin)
+        setImageTop(Math.round(rect.top - containerRect.top + 64))
       }
     }
     
@@ -288,9 +289,17 @@ export function NumberingPreview({
                     disabled={!isEditingLocation}
                   />
                   <span className="text-xs font-medium text-gray-700 mt-1">Position Y</span>
-                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
-                  
-                  {/* Remove redundant numeric input - slider is enough */}
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={Math.round(settings.fy * 100)}
+                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) / 100 }))}
+                    className="w-12 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
+                    disabled={!isEditingLocation}
+                  />
+                  <span className="text-xs text-gray-500">%</span>
                 </div>
 
                 {/* Preview image with click/drag positioning */}
@@ -301,7 +310,7 @@ export function NumberingPreview({
                       onClick={() => setIsEditingLocation(!isEditingLocation)}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                     >
-                      {isEditingLocation ? 'Save Location' : 'Edit Number Location'}
+                      {isEditingLocation ? 'Save Number Location' : 'Edit Number Location'}
                     </button>
                   </div>
                   
@@ -359,7 +368,7 @@ export function NumberingPreview({
                           />
                         )}
                         
-                        {/* Cursor hint text - smart positioning */}
+                        {/* Cursor hint text - smart positioning - only when NOT dragging */}
                         {!isDragging && isEditingLocation && (() => {
                           const { translateX, translateY } = getHintPosition(settings.fx, settings.fy)
                           return (
@@ -396,7 +405,20 @@ export function NumberingPreview({
                       disabled={!isEditingLocation}
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
-                      <span>Position X: {Math.round(settings.fx * 100)}%</span>
+                      <span>Position X:</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={Math.round(settings.fx * 100)}
+                          onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) / 100 }))}
+                          className="w-12 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
+                          disabled={!isEditingLocation}
+                        />
+                        <span>%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
