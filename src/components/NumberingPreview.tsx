@@ -340,7 +340,11 @@ export function NumberingPreview({
                           src={isEditingLocation ? imageSrc : previewDataUrl}
                           alt="Ticket preview"
                           className="w-full h-auto object-contain pointer-events-none"
-                          style={{ maxHeight: '60vh' }}
+                          style={{ 
+                            maxHeight: '60vh',
+                            opacity: 1,
+                            filter: 'none'
+                          }}
                         />
                         
                         {/* Dynamic number overlay - visible in edit mode (both when idle and dragging) */}
@@ -350,10 +354,19 @@ export function NumberingPreview({
                             style={{
                               left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
                               top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
-                              transform: 'translate(-50%, -50%)'
+                              transform: 'translate(-50%, -50%)',
+                              zIndex: 10
                             }}
                           >
-                            <div className="text-sm font-bold text-gray-900 border-2 border-dashed border-gray-400 px-3 py-2 rounded bg-transparent">
+                            <div 
+                              className="font-bold text-gray-900 border-2 border-dashed border-blue-500 px-3 py-2 rounded bg-white bg-opacity-90"
+                              style={{
+                                fontSize: `${settings.fontSize}px`,
+                                fontFamily: settings.fontFamily,
+                                color: settings.fontColor,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
                           </div>
