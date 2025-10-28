@@ -319,7 +319,8 @@ export function NumberingPreview({
                   
                   <div 
                     ref={previewImageRef}
-                    className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative cursor-crosshair"
+                    className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative"
+                    style={{ cursor: isDragging ? 'none' : 'crosshair' }}
                     onClick={isEditingLocation ? handlePreviewClick : undefined}
                     onMouseDown={isEditingLocation ? () => setIsDragging(true) : undefined}
                     onMouseUp={handleMouseUp}
