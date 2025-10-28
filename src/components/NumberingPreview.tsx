@@ -26,6 +26,7 @@ export interface ExportSettings {
   fontColor: string
   fontFamily: string
   exportFormat: 'zip' | 'pdf' | 'individual'
+  borderColor: string
   backgroundColor?: string
 }
 
@@ -78,7 +79,8 @@ export function NumberingPreview({
     fontSize: 48,
     fontColor: '#000000',
     fontFamily: 'Arial',
-    exportFormat: 'pdf'
+    exportFormat: 'pdf',
+    borderColor: '#3b82f6' // Blue-500
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -514,7 +516,7 @@ export function NumberingPreview({
                           >
                             {/* Main number box - renders exactly like preview (bold) */}
                             <div 
-                              className="border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
+                              className="border-2 border-dashed px-1 py-0.5 rounded"
                               style={{
                                 // Scale based on preview container size vs actual image dimensions
                                 fontSize: `${settings.fontSize * (imageHeight / imgHeight)}px`,
@@ -523,7 +525,8 @@ export function NumberingPreview({
                                 whiteSpace: 'nowrap',
                                 backgroundColor: 'transparent',
                                 fontWeight: 'bold',
-                                lineHeight: '1'
+                                lineHeight: '1',
+                                borderColor: settings.borderColor
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
@@ -768,6 +771,26 @@ export function NumberingPreview({
                   />
                   <div id="font-color-help" className="sr-only">
                     Select the color for ticket numbers
+                  </div>
+                </div>
+
+                <div>
+                  <label 
+                    htmlFor="border-color" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Border Color
+                  </label>
+                  <input
+                    id="border-color"
+                    type="color"
+                    value={settings.borderColor}
+                    onChange={(e) => setSettings(prev => ({ ...prev, borderColor: e.target.value }))}
+                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="border-color-help"
+                  />
+                  <div id="border-color-help" className="sr-only">
+                    Select the color for the positioning border around ticket numbers
                   </div>
                 </div>
               </fieldset>
