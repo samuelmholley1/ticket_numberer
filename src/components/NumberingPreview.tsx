@@ -289,17 +289,19 @@ export function NumberingPreview({
                     disabled={!isEditingLocation}
                   />
                   <span className="text-xs font-medium text-gray-700 mt-1">Position Y</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={Math.round(settings.fy * 100)}
-                    onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) / 100 }))}
-                    className="w-12 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
-                    disabled={!isEditingLocation}
-                  />
-                  <span className="text-xs text-gray-500">%</span>
+                  <div className="flex items-center gap-0.5">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={Math.round(settings.fy * 100)}
+                      onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) / 100 }))}
+                      className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
+                      disabled={!isEditingLocation}
+                    />
+                    <span className="text-xs text-gray-500">%</span>
+                  </div>
                 </div>
 
                 {/* Preview image with click/drag positioning */}
@@ -338,52 +340,41 @@ export function NumberingPreview({
                           style={{ maxHeight: '60vh' }}
                         />
                         
-                        {/* Dynamic number overlay - only visible in edit mode */}
-                        {isEditingLocation && (
+                        {/* Dynamic number overlay - only visible in edit mode and NOT while dragging */}
+                        {isEditingLocation && !isDragging && (
                           <div
                             className="absolute pointer-events-none"
                             style={{
-                              left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
-                              top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
+                              left: `${settings.fx * 100}%`,
+                              top: `${settings.fy * 100}%`,
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
-                            <div className={`${isDragging ? 'text-xl' : 'text-sm'} font-bold text-gray-900 bg-white px-3 py-2 rounded shadow-lg ${isDragging ? 'border-2 border-blue-500' : 'border-2 border-gray-600'}`}>
+                            <div className="text-sm font-bold text-transparent border-2 border-dashed border-gray-400 px-3 py-2 rounded">
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
                           </div>
                         )}
                         
-                        {/* Position indicator outline - only when NOT dragging */}
-                        {!isDragging && isEditingLocation && (
+                        {/* Dragging number - only visible while actively dragging */}
+                        {isDragging && dragPosition && (
                           <div
-                            className="absolute border-2 border-dashed border-gray-400 rounded pointer-events-none"
+                            className="absolute pointer-events-none"
                             style={{
-                              left: `${settings.fx * 100}%`,
-                              top: `${settings.fy * 100}%`,
-                              transform: 'translate(-50%, -50%)',
-                              width: '60px',
-                              height: '40px'
+                              left: `${dragPosition.fx * 100}%`,
+                              top: `${dragPosition.fy * 100}%`,
+                              transform: 'translate(-50%, -50%)'
                             }}
-                          />
+                          >
+                            <div className="text-sm font-bold text-gray-900">
+                              {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                            </div>
+                          </div>
                         )}
                         
-                        {/* Cursor hint text - smart positioning - only when NOT dragging */}
-                        {!isDragging && isEditingLocation && (() => {
-                          const { translateX, translateY } = getHintPosition(settings.fx, settings.fy)
-                          return (
-                            <div
-                              className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs pointer-events-none whitespace-nowrap"
-                              style={{
-                                left: `${settings.fx * 100}%`,
-                                top: `${settings.fy * 100}%`,
-                                transform: `translate(${translateX}, ${translateY})`
-                              }}
-                            >
-                              Click here to adjust position
-                            </div>
-                          )
-                        })()}
+                        {/* Position indicator outline - removed, now handled by transparent text box above */}
+                        
+                        {/* Cursor hint text removed - user just wants to see the dashed border */}
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -406,7 +397,7 @@ export function NumberingPreview({
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
                       <span>Position X:</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <input
                           type="number"
                           min="0"
@@ -414,7 +405,7 @@ export function NumberingPreview({
                           step="0.1"
                           value={Math.round(settings.fx * 100)}
                           onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) / 100 }))}
-                          className="w-12 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
+                          className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
                           disabled={!isEditingLocation}
                         />
                         <span>%</span>
