@@ -52,6 +52,21 @@ export function NumberingPreview({
   // Get actual image dimensions or use defaults
   const imgWidth = imageDimensions?.width || 600
   const imgHeight = imageDimensions?.height || 1500
+
+  // Helper function to estimate ZIP file size based on image dimensions and count
+  const estimateZipSize = (count: number, width: number, height: number): number => {
+    // Canvas rendering typically uses RGBA (4 bytes per pixel)
+    // But PNG compression typically achieves 10-30% of raw size depending on image complexity
+    const rawPixels = width * height * 4 // RGBA bytes
+    const compressedTicket = rawPixels * 0.15 // Assume 15% compression ratio for PNG
+    const totalBytes = compressedTicket * count
+    
+    // Add ~5KB for metadata, ZIP headers, etc.
+    const overhead = 5 * 1024 * count
+    const totalWithOverhead = totalBytes + overhead
+    
+    return Math.round(totalWithOverhead / (1024 * 1024)) // Convert to MB
+  }
   
   const [settings, setSettings] = useState<ExportSettings>({
     startNumber: 1,
@@ -69,10 +84,73 @@ export function NumberingPreview({
   const modalRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
+  // Undo/Redo state
+  const [history, setHistory] = useState<ExportSettings[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+
+  // Helper function to add to history
+  const updateSettingsWithHistory = (newSettings: ExportSettings | ((prev: ExportSettings) => ExportSettings)) => {
+    setSettings(prevSettings => {
+      const updated = typeof newSettings === 'function' ? newSettings(prevSettings) : newSettings
+      
+      // Remove any future history if we've undone and made a new change
+      const newHistory = history.slice(0, historyIndex + 1)
+      newHistory.push(updated)
+      setHistory(newHistory)
+      setHistoryIndex(newHistory.length - 1)
+      
+      return updated
+    })
+  }
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
+      setSettings(history[newIndex])
+      toast.info('Undo', 'Reverted to previous settings')
+    }
+  }
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
+      setSettings(history[newIndex])
+      toast.info('Redo', 'Restored next settings')
+    }
+  }
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    if (!isOpen) return
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Z or Cmd+Z for undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      // Ctrl+Shift+Z or Cmd+Shift+Z for redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'y') && e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+      // Ctrl+Y or Cmd+Y for redo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, historyIndex, history])
+
   // Update settings when image dimensions change
   useEffect(() => {
     if (imageDimensions) {
-      setSettings(prev => ({
+      updateSettingsWithHistory(prev => ({
         ...prev,
         ticketWidth: imageDimensions.width,
         ticketHeight: imageDimensions.height
@@ -82,7 +160,7 @@ export function NumberingPreview({
 
   // Update settings when position changes
   useEffect(() => {
-    setSettings(prev => ({
+    updateSettingsWithHistory(prev => ({
       ...prev,
       fx: position.fx,
       fy: position.fy
@@ -203,6 +281,39 @@ export function NumberingPreview({
     setDragPosition({ fx, fy })
   }
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isEditingLocation) return
+    setIsDragging(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !isEditingLocation || !previewImageRef.current) return
+    
+    const rect = previewImageRef.current.getBoundingClientRect()
+    const touch = e.touches[0]
+    const x = touch.clientX - rect.left
+    const y = touch.clientY - rect.top
+    
+    // Clamp to bounds
+    const fx = Math.max(0, Math.min(1, x / rect.width))
+    const fy = Math.max(0, Math.min(1, y / rect.height))
+    
+    // Update temporary drag position for live preview
+    setDragPosition({ fx, fy })
+    
+    // Prevent default to avoid scroll
+    e.preventDefault()
+  }
+
+  const handleTouchEnd = () => {
+    if (isDragging && isEditingLocation && dragPosition) {
+      // Apply the final drag position to settings
+      setSettings(prev => ({ ...prev, fx: dragPosition.fx, fy: dragPosition.fy }))
+      setDragPosition(null)
+    }
+    setIsDragging(false)
+  }
+
   const handleMouseUp = () => {
     if (isDragging && isEditingLocation && dragPosition) {
       // Apply the final drag position to settings
@@ -248,6 +359,7 @@ export function NumberingPreview({
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -257,6 +369,7 @@ export function NumberingPreview({
           role="dialog"
           aria-modal="true"
           aria-labelledby="preview-title"
+          aria-describedby="preview-description"
           tabIndex={-1}
           className="relative w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all focus:outline-none"
         >
@@ -269,8 +382,11 @@ export function NumberingPreview({
               Preview Numbered Tickets
             </h3>
 
-            {/* Message */}
-            <p className="text-center text-sm text-gray-600">
+            {/* Description */}
+            <p
+              id="preview-description"
+              className="text-center text-sm text-gray-600"
+            >
               You&apos;re about to generate {ticketCount} numbered tickets. Here&apos;s a preview of ticket #{formatTicketNumber(settings.startNumber, settings.numberFormat)}.
             </p>
 
@@ -280,6 +396,7 @@ export function NumberingPreview({
                 {/* Y-axis slider on the left - aligned with image */}
                 <div className="flex flex-col items-center gap-2" style={{ marginTop: `${imageTop}px` }}>
                   <input
+                    id="position-y-slider"
                     type="range"
                     min="0"
                     max="1"
@@ -289,10 +406,13 @@ export function NumberingPreview({
                     className="cursor-pointer"
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: `${imageHeight}px` }}
                     disabled={!isEditingLocation}
+                    aria-label="Vertical position of ticket number"
+                    aria-describedby="position-y-help"
                   />
                   <span className="text-xs font-medium text-gray-700 mt-1">Position Y</span>
                   <div className="flex items-center gap-0.5">
                     <input
+                      id="position-y-input"
                       type="number"
                       min="0"
                       max="100"
@@ -301,8 +421,13 @@ export function NumberingPreview({
                       onChange={(e) => setSettings(prev => ({ ...prev, fy: parseFloat(e.target.value) / 100 }))}
                       className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
                       disabled={!isEditingLocation}
+                      aria-label="Vertical position percentage"
+                      aria-describedby="position-y-help"
                     />
                     <span className="text-xs text-gray-500">%</span>
+                  </div>
+                  <div id="position-y-help" className="sr-only">
+                    Adjust the vertical position of the ticket number on the template
                   </div>
                 </div>
 
@@ -313,9 +438,14 @@ export function NumberingPreview({
                     <button
                       onClick={() => setIsEditingLocation(!isEditingLocation)}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                      aria-pressed={isEditingLocation}
+                      aria-describedby="edit-location-help"
                     >
                       {isEditingLocation ? 'Save Number Location' : 'Edit Number Location'}
                     </button>
+                    <div id="edit-location-help" className="sr-only">
+                      Toggle between editing and saving the position of the ticket number on the template
+                    </div>
                   </div>
                   
                   <div 
@@ -327,6 +457,29 @@ export function NumberingPreview({
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handlePreviewDrag}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchEnd}
+                    role={isEditingLocation ? "button" : "img"}
+                    tabIndex={isEditingLocation ? 0 : -1}
+                    aria-label={isEditingLocation ? "Click or tap to position ticket number on template" : "Ticket preview"}
+                    aria-describedby={isEditingLocation ? "preview-position-help" : undefined}
+                    onKeyDown={(e) => {
+                      if (!isEditingLocation) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        // Simulate click at center for keyboard users
+                        const rect = previewImageRef.current?.getBoundingClientRect()
+                        if (rect) {
+                          const fakeEvent = {
+                            clientX: rect.left + rect.width / 2,
+                            clientY: rect.top + rect.height / 2
+                          } as React.MouseEvent<HTMLDivElement>
+                          handlePreviewClick(fakeEvent)
+                        }
+                      }
+                    }}
                   >
                     {isGenerating ? (
                       <div className="flex items-center justify-center h-64">
@@ -379,9 +532,17 @@ export function NumberingPreview({
                     )}
                   </div>
                   
+                  {/* Help text for positioning */}
+                  {isEditingLocation && (
+                    <div id="preview-position-help" className="sr-only">
+                      Click on the image to position the ticket number. Use the sliders below to fine-tune the position.
+                    </div>
+                  )}
+                  
                   {/* X-axis slider below */}
                   <div className="mt-2 flex flex-col items-center gap-1">
                     <input
+                      id="position-x-slider"
                       type="range"
                       min="0"
                       max="1"
@@ -390,12 +551,15 @@ export function NumberingPreview({
                       onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) }))}
                       className="w-full cursor-pointer"
                       disabled={!isEditingLocation}
+                      aria-label="Horizontal position of ticket number"
+                      aria-describedby="position-x-help"
                     />
                     <div className="flex justify-between w-full text-xs text-gray-500">
                       <span></span>
                       <div className="flex items-center gap-1">
                         <span>Position X:</span>
                         <input
+                          id="position-x-input"
                           type="number"
                           min="0"
                           max="100"
@@ -404,21 +568,32 @@ export function NumberingPreview({
                           onChange={(e) => setSettings(prev => ({ ...prev, fx: parseFloat(e.target.value) / 100 }))}
                           className="w-10 text-xs text-center border border-gray-300 rounded px-1 py-0.5"
                           disabled={!isEditingLocation}
+                          aria-label="Horizontal position percentage"
+                          aria-describedby="position-x-help"
                         />
                         <span>%</span>
                       </div>
+                    </div>
+                    <div id="position-x-help" className="sr-only">
+                      Adjust the horizontal position of the ticket number on the template
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Settings */}
-              <div className="grid grid-cols-2 gap-4">
+              <fieldset className="grid grid-cols-2 gap-4">
+                <legend className="sr-only">Ticket Numbering Settings</legend>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="start-number" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Start Number
                   </label>
                   <input
+                    id="start-number"
                     type="number"
                     min="1"
                     max="999999"
@@ -436,32 +611,49 @@ export function NumberingPreview({
                       setSettings(prev => ({ ...prev, startNumber: value }))
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="start-number-help"
                   />
+                  <div id="start-number-help" className="sr-only">
+                    The number to start numbering tickets from
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="number-format" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Number Format
                   </label>
                   <select
+                    id="number-format"
                     value={settings.numberFormat}
                     onChange={(e) => setSettings(prev => ({ ...prev, numberFormat: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="number-format-help"
                   >
                     <option value="001">001, 002, 003...</option>
                     <option value="0001">0001, 0002, 0003...</option>
                     <option value="1">1, 2, 3...</option>
                   </select>
+                  <div id="number-format-help" className="sr-only">
+                    Choose the numbering format for your tickets
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-family" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Family
                   </label>
                   <select
+                    id="font-family"
                     value={settings.fontFamily}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-family-help"
                   >
                     <option value="Arial">Arial</option>
                     <option value="Helvetica">Helvetica</option>
@@ -471,13 +663,20 @@ export function NumberingPreview({
                     <option value="Courier New">Courier New</option>
                     <option value="Impact">Impact</option>
                   </select>
+                  <div id="font-family-help" className="sr-only">
+                    Select the font family for ticket numbers
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-size" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Size
                   </label>
                   <input
+                    id="font-size"
                     type="number"
                     min="12"
                     max="120"
@@ -495,63 +694,125 @@ export function NumberingPreview({
                       setSettings(prev => ({ ...prev, fontSize: value }))
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-size-help"
                   />
+                  <div id="font-size-help" className="sr-only">
+                    Font size in pixels, between 12 and 120
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="export-format" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Export Format
                   </label>
                   <select
+                    id="export-format"
                     value={settings.exportFormat}
                     onChange={(e) => setSettings(prev => ({ ...prev, exportFormat: e.target.value as 'zip' | 'pdf' | 'individual' }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="export-format-help"
                   >
                     <option value="zip">ZIP (All tickets in one file)</option>
                     <option value="pdf">PDFs (3-up US Letter, print-ready)</option>
                     <option value="individual">Individual PNGs (Download separately)</option>
                   </select>
+                  <div id="export-format-help" className="sr-only">
+                    Choose how to export your numbered tickets
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label 
+                    htmlFor="font-color" 
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Font Color
                   </label>
                   <input
+                    id="font-color"
                     type="color"
                     value={settings.fontColor}
                     onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    aria-describedby="font-color-help"
                   />
+                  <div id="font-color-help" className="sr-only">
+                    Select the color for ticket numbers
+                  </div>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Summary */}
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-gray-50 p-3 rounded-lg" role="region" aria-labelledby="summary-heading">
+                <h4 id="summary-heading" className="sr-only">Export Summary</h4>
                 <div className="text-sm text-gray-600">
                   <div>Tickets to generate: {ticketCount}</div>
                   <div>Number range: {formatTicketNumber(settings.startNumber, settings.numberFormat)} - {formatTicketNumber(settings.startNumber + ticketCount - 1, settings.numberFormat)}</div>
-                  <div>Estimated ZIP size: ~{Math.round((ticketCount * 150) / 1024)}MB</div>
+                  <div>Estimated ZIP size: ~{estimateZipSize(ticketCount, imgWidth, imgHeight)}MB</div>
                 </div>
               </div>
             </div>
 
             {/* Buttons */}
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirm}
-                className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-              >
-                {settings.exportFormat === 'zip' && 'Generate ZIP'}
-                {settings.exportFormat === 'pdf' && 'Generate PDFs'}
-                {settings.exportFormat === 'individual' && 'Download Individual Files'}
-              </button>
+            <div className="mt-6 space-y-3">
+              {/* Undo/Redo buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={undo}
+                  disabled={historyIndex <= 0}
+                  className="flex-1 rounded-lg bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  title="Undo (Ctrl+Z)"
+                  aria-label="Undo changes"
+                  aria-describedby="undo-help"
+                >
+                  ↶ Undo
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={historyIndex >= history.length - 1}
+                  className="flex-1 rounded-lg bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  title="Redo (Ctrl+Y)"
+                  aria-label="Redo changes"
+                  aria-describedby="redo-help"
+                >
+                  ↷ Redo
+                </button>
+              </div>
+              <div id="undo-help" className="sr-only">
+                Undo last change. Keyboard shortcut: Ctrl+Z (Windows) or Cmd+Z (Mac)
+              </div>
+              <div id="redo-help" className="sr-only">
+                Redo last undone change. Keyboard shortcut: Ctrl+Y or Ctrl+Shift+Z (Windows) or Cmd+Y or Cmd+Shift+Z (Mac)
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={onClose}
+                  className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  aria-describedby="cancel-help"
+                >
+                  Cancel
+                </button>
+                <div id="cancel-help" className="sr-only">
+                  Close this dialog without generating tickets
+                </div>
+                <button
+                  onClick={handleConfirm}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  aria-describedby="confirm-help"
+                >
+                  {settings.exportFormat === 'zip' && 'Generate ZIP'}
+                  {settings.exportFormat === 'pdf' && 'Generate PDFs'}
+                  {settings.exportFormat === 'individual' && 'Download Individual Files'}
+                </button>
+                <div id="confirm-help" className="sr-only">
+                  Generate and download the numbered tickets with current settings
+                </div>
+              </div>
             </div>
           </div>
         </div>

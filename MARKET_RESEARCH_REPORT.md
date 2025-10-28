@@ -415,3 +415,198 @@ The hybrid architecture with **1,000-ticket cap** provides:
 **Recommended Action**: Implement hybrid system with 500-ticket browser threshold and 1,000-ticket maximum per batch. This positions the product as both the **fastest** (browser path) and **most capable** (1,000 limit + Start Number) solution in the market.
 
 **Next Steps**: Increase cap to 1,000, add Start Number field, then build Vercel API endpoint for 501-1,000 range.
+
+---
+
+## Addendum 3: PDF Performance - The Reality of High-Quality Imaging (Oct 28, 2025)
+
+### Understanding the Trade-Off: Quality vs. File Size
+
+**Your Core Value Proposition:**
+Print-ready, high-quality numbered tickets at **300 DPI** - perfect for professional events, merchandise, or anything that will physically print.
+
+### Why Large Files and Slow Downloads?
+
+**High-Resolution Processing:**
+- 300 DPI processing generates large image files
+- This is necessary for print quality - you can't fake it at lower resolutions
+- Trade-off is inherent to the value proposition
+
+**Client-Side Rendering:**
+- All processing happens in user's browser (computationally intensive)
+- Limited by browser memory and CPU
+- Larger batches = slower generation
+
+**PDF Batching Reality:**
+- Current code batches 50 tickets per PDF for "email-friendly" distribution
+- Even at 50 tickets per PDF, high-quality images can exceed email limits (10-25MB typical)
+- Each PDF has metadata overhead
+
+### The Reality Check
+
+**Yes, this IS the reality of high-quality reproduction:**
+- Print-ready quality ≠ web-optimized file sizes
+- There's a fundamental trade-off between quality and file size
+- Users wanting print quality must accept larger files
+
+---
+
+### Optimization Strategies
+
+**Option 1: Quality/Size Presets (Quick Win - Implement First)**
+
+Add user-selectable options:
+
+```
+Quality Presets:
+├─ "Print Ready (300 DPI)" → Large files, perfect for printing
+│   └─ ~500KB per ticket, slower generation
+└─ "Email/Web Optimized (96 DPI)" → Smaller files, screen-only
+    └─ ~50KB per ticket, 10x faster generation
+```
+
+**Implementation:**
+- Add radio buttons: "Print (300 DPI)" vs "Screen (96 DPI)"
+- Adjust canvas resolution based on selection
+- Update file size estimation dynamically
+- Show warning for print option: "Large files (~20MB for 50 tickets)"
+
+**User Benefits:**
+- Users wanting quick digital distribution choose 96 DPI
+- Users wanting printed tickets choose 300 DPI
+- Informed decision-making
+
+**Development Effort:** 2-3 hours
+
+---
+
+**Option 2: Configurable PDF Batching (Medium Effort)**
+
+Allow users to choose tickets per PDF:
+
+```
+PDF Batch Size Options:
+├─ 10 tickets per PDF (small files, many PDFs)
+├─ 25 tickets per PDF (balanced)
+├─ 50 tickets per PDF (current, few PDFs)
+└─ Custom: [____] tickets per PDF
+```
+
+**Implementation:**
+- Add input field for batch size (10-100)
+- Calculate and show estimated file size
+- Show number of resulting PDFs
+- Warning if single PDF would exceed 25MB
+
+**User Benefits:**
+- Fine-grained control over file organization
+- Predictable file sizes for their use case
+- Better email compatibility
+
+**Development Effort:** 1-2 hours
+
+---
+
+**Option 3: Server-Side Processing (Long-Term Solution)**
+
+**Why This is Best Long-Term:**
+
+Current limitations:
+- ❌ Browser can only process one ticket at a time sequentially
+- ❌ All processing blocks UI
+- ❌ Users must stay on page until done
+- ❌ Large memory footprint on client
+
+Server-side benefits:
+- ✅ Parallel processing (process 10+ tickets simultaneously)
+- ✅ Better compression algorithms (reduce file sizes 30-50%)
+- ✅ Asynchronous - send download link via email
+- ✅ Memory unlimited
+- ✅ Faster overall (even with network latency)
+
+**Trade-offs:**
+- ⚠️ Infrastructure cost ($20-100/month depending on scale)
+- ⚠️ Development effort (1-2 weeks)
+- ⚠️ Complexity increase (API, async jobs, storage)
+
+**When to implement:** After MVP launch, once you have paying users
+
+---
+
+### Recommended Approach (Phased)
+
+**Phase 1: Immediate (This Week)**
+- ✅ Add Quality Presets (Print vs. Email)
+- ✅ Add configurable PDF batch sizes
+- ✅ Update size estimations for each scenario
+- Expected result: **Users can now choose their own trade-off**
+
+**Phase 2: Monitor & Iterate (Weeks 2-4)**
+- Track which options users select
+- Gather feedback on file sizes
+- Identify real pain points
+
+**Phase 3: Scale (Month 2+)**
+- If server-side processing needed, implement then
+- By then you'll have data to justify the cost
+
+---
+
+### User Communication Strategy
+
+**On the Export Screen, Show:**
+
+```
+Quality Selection:
+○ Print Ready (300 DPI)
+  → Perfect for printing
+  → File sizes: ~500KB/ticket
+  → Best for: Professional events, merchandise
+  
+○ Email/Web Optimized (96 DPI)
+  → Perfect for sharing digitally
+  → File sizes: ~50KB/ticket
+  → Best for: Digital distribution, email sharing
+
+Estimated Download Time:
+• Print Ready: ~45 seconds (42MB for 50 tickets)
+• Email Optimized: ~5 seconds (4.2MB for 50 tickets)
+```
+
+**Rationale:**
+- Transparent about trade-offs
+- Users make informed choice
+- Expectations set correctly
+
+---
+
+### File Size Reality Check
+
+**What users should expect:**
+
+| Resolution | Per Ticket | 100 Tickets | 500 Tickets |
+|------------|-----------|------------|------------|
+| 300 DPI (Print) | ~500KB | ~50MB | ~250MB |
+| 96 DPI (Web) | ~50KB | ~5MB | ~25MB |
+| Difference | 10x smaller | 10x smaller | 10x smaller |
+
+**This is unavoidable:**
+- You cannot have both high-quality AND small files
+- Users must choose their priority
+- Most tools in this space make the same trade-off
+
+---
+
+### Bottom Line
+
+**The current "large files & slow downloads" isn't a bug - it's a feature.**
+
+You're providing something competitors can't: print-ready quality. Users who want that must accept the file size.
+
+**What you can do:**
+1. ✅ Give users a choice (print vs. web quality)
+2. ✅ Make batching configurable
+3. ✅ Be transparent about trade-offs
+4. ✅ Eventually move to server-side processing for scale
+
+This way, you're not fighting the laws of physics - you're giving users control and transparency.
