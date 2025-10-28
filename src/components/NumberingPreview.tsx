@@ -503,19 +503,20 @@ export function NumberingPreview({
                         {/* Dynamic number overlay - visible in edit mode (both when idle and dragging) */}
                         {isEditingLocation && (
                           <div
-                            className="absolute pointer-events-none"
+                            className="absolute pointer-events-auto select-none"
                             style={{
                               left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
                               top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                               transform: 'translate(-50%, -50%)',
-                              zIndex: 10
+                              zIndex: 10,
+                              cursor: 'grab'
                             }}
                           >
-                            {/* Main number box - NO white background, NO size change */}
+                            {/* Main number box - scaled down to 60% for realistic preview in edit mode */}
                             <div 
                               className="border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
                               style={{
-                                fontSize: `${settings.fontSize}px`,
+                                fontSize: `${settings.fontSize * 0.6}px`,
                                 fontFamily: settings.fontFamily,
                                 color: settings.fontColor,
                                 whiteSpace: 'nowrap',
@@ -525,21 +526,6 @@ export function NumberingPreview({
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
-                            </div>
-
-                            {/* Drag indicator hand cursor - positioned outside textbox, opposite to borders */}
-                            <div
-                              className="absolute pointer-events-none select-none"
-                              style={{
-                                // Horizontal positioning: opposite side if near left/right border
-                                left: (dragPosition?.fx ?? settings.fx) < 0.25 ? '28px' : 'auto',
-                                right: (dragPosition?.fx ?? settings.fx) > 0.75 ? '28px' : 'auto',
-                                // Vertical positioning: opposite side if near top/bottom border
-                                top: (dragPosition?.fy ?? settings.fy) > 0.75 ? '-28px' : '28px',
-                                fontSize: '20px'
-                              }}
-                            >
-                              👆
                             </div>
                           </div>
                         )}
