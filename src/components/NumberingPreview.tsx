@@ -536,8 +536,9 @@ export function NumberingPreview({
                                 alt="Click to position"
                                 className="absolute pointer-events-none select-none"
                                 style={{
-                                  // Position right at the border edge, touching it
-                                  right: `${-18 * (imageHeight / imgHeight)}px`,
+                                  // Position just outside border, jumping to opposite side near edges to avoid cutoff
+                                  left: (dragPosition?.fx ?? settings.fx) > 0.75 ? `${-12 * (imageHeight / imgHeight)}px` : 'auto',
+                                  right: (dragPosition?.fx ?? settings.fx) <= 0.75 ? `${-12 * (imageHeight / imgHeight)}px` : 'auto',
                                   top: '50%',
                                   transform: 'translateY(-50%)',
                                   width: `${48 * (imageHeight / imgHeight)}px`,
