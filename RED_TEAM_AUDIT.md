@@ -156,7 +156,7 @@ if (value > 120) {
 - Touch events mirror mouse event coordinates for consistent positioning
 - Touch end properly applies final position just like mouse up
 
-### 6. No Undo/Redo Functionality
+### 6. No Undo/Redo Functionality ✅ FIXED
 **Severity:** LOW - Quality of life issue
 **Location:** `src/components/NumberingPreview.tsx`
 
@@ -170,10 +170,14 @@ if (value > 120) {
 - Increased support requests
 - Users avoid experimenting
 
-**Fix Required:**
-- Implement undo/redo stack
-- Keyboard shortcuts (Ctrl+Z, Ctrl+Y)
-- Visual feedback for changes
+**Fix Applied:**
+- Implemented undo/redo history stack for all settings changes
+- Added Undo/Redo buttons in modal UI
+- Keyboard shortcuts: Ctrl+Z (Undo), Ctrl+Y or Ctrl+Shift+Z (Redo)
+- Proper history management - new changes after undo clear future history
+- Disabled buttons when at start/end of history
+- Visual feedback with tooltip hints
+- Accessible with proper ARIA labels
 
 ---
 
@@ -342,7 +346,7 @@ if (value > 120) {
 ## 📈 PROGRESS TRACKING
 
 **Last Updated:** October 28, 2025
-**Overall Status:** 🟡 IN PROGRESS (5/10 issues fixed)
+**Overall Status:** 🟡 IN PROGRESS (6/10 issues fixed)
 
 ### Completed Fixes
 - [x] Input validation
@@ -350,11 +354,11 @@ if (value > 120) {
 - [x] Error recovery
 - [x] Accessibility
 - [x] Mobile support
-- [ ] Undo/redo
+- [x] Undo/redo
 - [ ] Loading states
 - [ ] Live preview
 - [ ] Settings persistence
 - [ ] Size estimation
 
-**Next Priority:** Undo/redo functionality
+**Next Priority:** Loading states
 <parameter name="filePath">/Users/samuelholley/Projects/ticket_numberer/RED_TEAM_AUDIT.md

@@ -69,10 +69,73 @@ export function NumberingPreview({
   const modalRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 
+  // Undo/Redo state
+  const [history, setHistory] = useState<ExportSettings[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+
+  // Helper function to add to history
+  const updateSettingsWithHistory = (newSettings: ExportSettings | ((prev: ExportSettings) => ExportSettings)) => {
+    setSettings(prevSettings => {
+      const updated = typeof newSettings === 'function' ? newSettings(prevSettings) : newSettings
+      
+      // Remove any future history if we've undone and made a new change
+      const newHistory = history.slice(0, historyIndex + 1)
+      newHistory.push(updated)
+      setHistory(newHistory)
+      setHistoryIndex(newHistory.length - 1)
+      
+      return updated
+    })
+  }
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
+      setSettings(history[newIndex])
+      toast.info('Undo', 'Reverted to previous settings')
+    }
+  }
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
+      setSettings(history[newIndex])
+      toast.info('Redo', 'Restored next settings')
+    }
+  }
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    if (!isOpen) return
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Z or Cmd+Z for undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      // Ctrl+Shift+Z or Cmd+Shift+Z for redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'y') && e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+      // Ctrl+Y or Cmd+Y for redo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, historyIndex, history])
+
   // Update settings when image dimensions change
   useEffect(() => {
     if (imageDimensions) {
-      setSettings(prev => ({
+      updateSettingsWithHistory(prev => ({
         ...prev,
         ticketWidth: imageDimensions.width,
         ticketHeight: imageDimensions.height
@@ -82,7 +145,7 @@ export function NumberingPreview({
 
   // Update settings when position changes
   useEffect(() => {
-    setSettings(prev => ({
+    updateSettingsWithHistory(prev => ({
       ...prev,
       fx: position.fx,
       fy: position.fy
@@ -679,28 +742,61 @@ export function NumberingPreview({
             </div>
 
             {/* Buttons */}
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                aria-describedby="cancel-help"
-              >
-                Cancel
-              </button>
-              <div id="cancel-help" className="sr-only">
-                Close this dialog without generating tickets
+            <div className="mt-6 space-y-3">
+              {/* Undo/Redo buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={undo}
+                  disabled={historyIndex <= 0}
+                  className="flex-1 rounded-lg bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  title="Undo (Ctrl+Z)"
+                  aria-label="Undo changes"
+                  aria-describedby="undo-help"
+                >
+                  ↶ Undo
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={historyIndex >= history.length - 1}
+                  className="flex-1 rounded-lg bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  title="Redo (Ctrl+Y)"
+                  aria-label="Redo changes"
+                  aria-describedby="redo-help"
+                >
+                  ↷ Redo
+                </button>
               </div>
-              <button
-                onClick={handleConfirm}
-                className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                aria-describedby="confirm-help"
-              >
-                {settings.exportFormat === 'zip' && 'Generate ZIP'}
-                {settings.exportFormat === 'pdf' && 'Generate PDFs'}
-                {settings.exportFormat === 'individual' && 'Download Individual Files'}
-              </button>
-              <div id="confirm-help" className="sr-only">
-                Generate and download the numbered tickets with current settings
+              <div id="undo-help" className="sr-only">
+                Undo last change. Keyboard shortcut: Ctrl+Z (Windows) or Cmd+Z (Mac)
+              </div>
+              <div id="redo-help" className="sr-only">
+                Redo last undone change. Keyboard shortcut: Ctrl+Y or Ctrl+Shift+Z (Windows) or Cmd+Y or Cmd+Shift+Z (Mac)
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={onClose}
+                  className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  aria-describedby="cancel-help"
+                >
+                  Cancel
+                </button>
+                <div id="cancel-help" className="sr-only">
+                  Close this dialog without generating tickets
+                </div>
+                <button
+                  onClick={handleConfirm}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  aria-describedby="confirm-help"
+                >
+                  {settings.exportFormat === 'zip' && 'Generate ZIP'}
+                  {settings.exportFormat === 'pdf' && 'Generate PDFs'}
+                  {settings.exportFormat === 'individual' && 'Download Individual Files'}
+                </button>
+                <div id="confirm-help" className="sr-only">
+                  Generate and download the numbered tickets with current settings
+                </div>
               </div>
             </div>
           </div>
