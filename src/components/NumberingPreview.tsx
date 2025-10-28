@@ -536,14 +536,16 @@ export function NumberingPreview({
                                 alt="Click to position"
                                 className="absolute pointer-events-none select-none"
                                 style={{
-                                  // Position just outside border, jumping to opposite side near edges to avoid cutoff
-                                  left: (dragPosition?.fx ?? settings.fx) > 0.75 ? `${-12 * (imageHeight / imgHeight)}px` : 'auto',
-                                  right: (dragPosition?.fx ?? settings.fx) <= 0.75 ? `${-12 * (imageHeight / imgHeight)}px` : 'auto',
+                                  // Position just outside the textbox border
+                                  // Calculate position to be outside based on text width
+                                  left: (dragPosition?.fx ?? settings.fx) > 0.75 ? `${-28 * (imageHeight / imgHeight)}px` : 'auto',
+                                  right: (dragPosition?.fx ?? settings.fx) <= 0.75 ? `${-28 * (imageHeight / imgHeight)}px` : 'auto',
                                   top: '50%',
                                   transform: 'translateY(-50%)',
                                   width: `${48 * (imageHeight / imgHeight)}px`,
                                   height: `${56 * (imageHeight / imgHeight)}px`,
-                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))'
+                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+                                  zIndex: 20
                                 }}
                               />
                             )}
