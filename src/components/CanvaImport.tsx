@@ -346,14 +346,14 @@ export function CanvaImport({
             />
             {numberPosition && imageDimensions && (
               <div
-                className="absolute text-4xl font-bold text-black bg-white bg-opacity-80 px-2 py-1 rounded pointer-events-none"
+                className="absolute text-xs font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded pointer-events-none shadow-lg border-2 border-white"
                 style={{
                   left: `${numberPosition.fx * 100}%`,
                   top: `${numberPosition.fy * 100}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                001
+                ✓
               </div>
             )}
           </div>
