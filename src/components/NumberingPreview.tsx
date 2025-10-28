@@ -529,23 +529,26 @@ export function NumberingPreview({
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
 
-                            {/* White cursor hand - positioned at border, right-touching */}
-                            <div
-                              className="absolute pointer-events-none select-none"
-                              style={{
-                                // Position right at the border edge
-                                right: '-12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                fontSize: `${18 * (imageHeight / imgHeight)}px`,
-                                lineHeight: '1',
-                                fontWeight: 'normal',
-                                textShadow: '0 0 2px rgba(255,255,255,0.8)',
-                                filter: 'brightness(1.1) drop-shadow(0 0 1px rgba(0,0,0,0.3))'
-                              }}
-                            >
-                              ☝️
-                            </div>
+                            {/* Grab cursor indicator - only visible when not dragging */}
+                            {!isDragging && (
+                              <div
+                                className="absolute pointer-events-none select-none"
+                                style={{
+                                  // Position right at the border edge
+                                  right: '-10px',
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  width: `${12 * (imageHeight / imgHeight)}px`,
+                                  height: `${14 * (imageHeight / imgHeight)}px`,
+                                  cursor: 'grab',
+                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath d='M9 8c0-1 1-2 2-2s2 1 2 2v4h-4V8zm4 0c0-1 1-2 2-2s2 1 2 2v6h-4V8zm4 2c0-1 1-2 2-2s2 1 2 2v7h-4v-7zm-12 6c0-1 1-2 2-2s2 1 2 2v7h-4v-7zM8 6c0-1-1-2-2-2s-2 1-2 2v9h4V6z' fill='white' stroke='%23333' stroke-width='0.5'/%3E%3C/svg%3E")`,
+                                  backgroundSize: 'contain',
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'center',
+                                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                                }}
+                              />
+                            )}
                           </div>
                         )}
                       </>
