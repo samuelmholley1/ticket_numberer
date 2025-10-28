@@ -538,8 +538,8 @@ export function NumberingPreview({
                                 style={{
                                   // Position just outside the textbox border
                                   // Calculate position to be outside based on text width
-                                  left: (dragPosition?.fx ?? settings.fx) > 0.75 ? `${-28 * (imageHeight / imgHeight)}px` : 'auto',
-                                  right: (dragPosition?.fx ?? settings.fx) <= 0.75 ? `${-28 * (imageHeight / imgHeight)}px` : 'auto',
+                                  left: (dragPosition?.fx ?? settings.fx) > 0.75 ? `${-48 * (imageHeight / imgHeight)}px` : 'auto',
+                                  right: (dragPosition?.fx ?? settings.fx) <= 0.75 ? `${-48 * (imageHeight / imgHeight)}px` : 'auto',
                                   top: '50%',
                                   transform: 'translateY(-50%)',
                                   width: `${48 * (imageHeight / imgHeight)}px`,
