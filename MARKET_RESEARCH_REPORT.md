@@ -248,4 +248,22 @@ The key to success will be marketing execution - particularly SEO dominance and 
    - Execute marketing strategy
    - Gather user feedback and iterate
 
-**Recommendation**: Proceed with commercialization using the freemium model. The market opportunity, technical foundation, and competitive landscape all support a successful launch with proper execution.
+---
+
+## Addendum: Batch Limits and PDF Performance (Oct 28, 2025)
+
+### Recommended Ticket Caps and Start Numbering
+- Increase the per-batch cap from 500 to **1,000 tickets** to cover most event scenarios while avoiding performance cliffs.
+- Add a **Start Number** input so users can run multiple batches (e.g., 1–1,000 then 1,001–2,000). This supports very large runs while aligning with a **per-batch $1 pricing** model.
+
+### PDF Size/Speed Realities and Optimizations
+- High-quality, print-ready exports at **300 DPI** inherently produce large files and longer processing times, especially client-side and in large batches.
+- Current batching at ~50 tickets per PDF can still exceed common email limits depending on design complexity.
+
+Actionable optimizations:
+- Offer a **Quality preset**: "Print (300 DPI)" vs. "Email/Web (96–150 DPI)" to reduce file sizes and speed up downloads when print accuracy isn’t required.
+- Make **PDF batch size configurable** (e.g., 10/25/50 per PDF) with inline guidance on expected file sizes.
+- Long-term: consider **server-side rendering/queuing** to generate PDFs asynchronously and deliver via download links, improving UX for very large batches (adds infra cost/complexity).
+
+Rationale:
+- This preserves the core value (print fidelity) while giving users control when their goal is **shareable files** rather than **press-ready assets**.
