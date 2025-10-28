@@ -126,9 +126,35 @@ export function CanvaImport({
     fileInputRef.current?.click()
   }
 
-  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) await handleFileSelect(file)
+    if (file) {
+      handleFileSelect(file)
+    }
+  }
+
+  const handleTemplateSelect = async () => {
+    setUploadState('processing')
+    setUploadError(null)
+
+    try {
+      // Load the template image
+      const response = await fetch('/AATR_2026_ticket.png')
+      const blob = await response.blob()
+      
+      // Create a File object from the blob
+      const templateFile = new File([blob], 'AATR_2026_ticket.png', { type: 'image/png' })
+      
+      // Process it like a regular upload
+      await processFile(templateFile)
+    } catch (error) {
+      console.error('Template loading error:', error)
+      setUploadState('error')
+      setUploadError({
+        type: 'processing_failed',
+        message: 'Failed to load template. Please try uploading manually.'
+      } as UploadError)
+    }
   }
 
   const resetUpload = () => {
@@ -143,10 +169,45 @@ export function CanvaImport({
 
   return (
     <div className="space-y-4">
-      <div className="text-sm font-medium text-gray-700">Upload Canva Design</div>
+      <div className="text-sm font-medium text-gray-700">Choose a Design</div>
 
       {!uploadedImage ? (
         <div className="space-y-4">
+          {/* Template Option */}
+          <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+            <div className="text-sm font-medium text-blue-900 mb-2">Quick Start Template</div>
+            <div className="flex items-center gap-4">
+              <img
+                src="/AATR_2026_ticket.png"
+                alt="AATR 2026 Ticket Template"
+                className="w-20 h-12 object-cover rounded border"
+              />
+              <div className="flex-1">
+                <div className="text-sm text-blue-800 font-medium">AATR 2026 Ticket</div>
+                <div className="text-xs text-blue-600">Pre-designed ticket template ready to number</div>
+              </div>
+              <button
+                onClick={handleTemplateSelect}
+                disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                Use Template
+              </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Upload Option */}
+          <div className="text-sm font-medium text-gray-700 mb-2">Upload Your Own Design</div>
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
