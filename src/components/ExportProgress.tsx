@@ -49,11 +49,15 @@ export function ExportProgress({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [completedCount, setCompletedCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
+  const [isCancelled, setIsCancelled] = useState(false)
 
   useEffect(() => {
     if (isOpen && totalTickets > 0) {
       initializeProgress()
       startGeneration()
+    }
+    return () => {
+      setIsCancelled(true)
     }
   }, [isOpen, totalTickets])
 
@@ -66,9 +70,12 @@ export function ExportProgress({
     setCurrentIndex(0)
     setCompletedCount(0)
     setErrorCount(0)
+    setIsCancelled(false)
   }
 
   const generateTicket = async (ticketIndex: number): Promise<string> => {
+    if (isCancelled) throw new Error('Generation cancelled')
+
     const ticketNumber = exportSettings.startNumber + ticketIndex
     
     // Get actual image dimensions
@@ -89,92 +96,101 @@ export function ExportProgress({
     })
   }
 
+  const processBatch = async (startIndex: number, batchSize: number): Promise<void> => {
+    const endIndex = Math.min(startIndex + batchSize, totalTickets)
+    const batchPromises: Promise<void>[] = []
+
+    for (let i = startIndex; i < endIndex; i++) {
+      if (isCancelled) return
+
+      const promise = (async () => {
+        setCurrentIndex(i)
+
+        // Update progress to generating
+        setProgress(prev => prev.map(p =>
+          p.index === i ? { ...p, status: 'generating' } : p
+        ))
+
+        try {
+          const dataUrl = await generateTicket(i)
+
+          // Update progress to completed
+          setProgress(prev => prev.map(p =>
+            p.index === i ? { ...p, status: 'completed', dataUrl } : p
+          ))
+
+          setCompletedCount(prev => prev + 1)
+          onTicketGenerated?.(i, dataUrl)
+
+        } catch (error) {
+          if (isCancelled) return
+
+          console.error(`Failed to generate ticket ${i + 1}:`, error)
+
+          // Update progress to error
+          setProgress(prev => prev.map(p =>
+            p.index === i ? {
+              ...p,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error'
+            } : p
+          ))
+
+          setErrorCount(prev => prev + 1)
+          onError?.(error instanceof Error ? error : new Error('Unknown error'))
+        }
+      })()
+
+      batchPromises.push(promise)
+    }
+
+    // Wait for all tickets in this batch to complete
+    await Promise.all(batchPromises)
+
+    // Yield control back to the browser to prevent UI freezing
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
   const startGeneration = async () => {
     setIsGenerating(true)
 
-    const dataUrls: string[] = []
-    let completed = 0
-    let errors = 0
-
-    for (let i = 0; i < totalTickets; i++) {
-      setCurrentIndex(i)
-
-      // Update progress to generating
-      setProgress(prev => prev.map(p =>
-        p.index === i ? { ...p, status: 'generating' } : p
-      ))
-
-      try {
-        const dataUrl = await generateTicket(i)
-        dataUrls.push(dataUrl)
-
-        // Update progress to completed
-        setProgress(prev => prev.map(p =>
-          p.index === i ? { ...p, status: 'completed', dataUrl } : p
-        ))
-
-        completed++
-        setCompletedCount(completed)
-        onTicketGenerated?.(i, dataUrl)
-
-        // Small delay to prevent UI blocking
-        await new Promise(resolve => setTimeout(resolve, 10))
-
-      } catch (error) {
-        console.error(`Failed to generate ticket ${i + 1}:`, error)
-
-        // Update progress to error
-        setProgress(prev => prev.map(p =>
-          p.index === i ? {
-            ...p,
-            status: 'error',
-            error: error instanceof Error ? error.message : 'Unknown error'
-          } : p
-        ))
-
-        errors++
-        setErrorCount(errors)
-        onError?.(error instanceof Error ? error : new Error('Unknown error'))
+    try {
+      // Process tickets in batches of 5 to prevent UI blocking
+      const batchSize = 5
+      for (let batchStart = 0; batchStart < totalTickets; batchStart += batchSize) {
+        if (isCancelled) break
+        await processBatch(batchStart, batchSize)
       }
-    }
 
-    setIsGenerating(false)
+      if (!isCancelled) {
+        setIsGenerating(false)
 
-    // Call onComplete with all successfully generated tickets
-    console.log('Generation complete. Total tickets:', completed, 'Errors:', errors)
-    if (completed > 0) {
-      console.log('Calling onComplete with', dataUrls.length, 'dataUrls')
-      onComplete?.(dataUrls)
+        // Collect all successfully generated tickets
+        const dataUrls: string[] = progress
+          .filter(p => p.status === 'completed' && p.dataUrl)
+          .map(p => p.dataUrl!)
+          .sort((a, b) => {
+            const indexA = progress.findIndex(p => p.dataUrl === a)
+            const indexB = progress.findIndex(p => p.dataUrl === b)
+            return indexA - indexB
+          })
+
+        console.log('Generation complete. Total tickets:', dataUrls.length, 'Errors:', errorCount)
+        if (dataUrls.length > 0) {
+          console.log('Calling onComplete with', dataUrls.length, 'dataUrls')
+          onComplete?.(dataUrls)
+        }
+      }
+    } catch (error) {
+      console.error('Batch generation failed:', error)
+      setIsGenerating(false)
     }
   }
 
-  const retryTicket = async (ticketIndex: number) => {
-    setProgress(prev => prev.map(p =>
-      p.index === ticketIndex ? { ...p, status: 'generating', error: undefined } : p
-    ))
-
-    try {
-      const dataUrl = await generateTicket(ticketIndex)
-
-      setProgress(prev => prev.map(p =>
-        p.index === ticketIndex ? { ...p, status: 'completed', dataUrl, error: undefined } : p
-      ))
-
-      setCompletedCount(prev => prev + 1)
-      setErrorCount(prev => Math.max(0, prev - 1))
-      onTicketGenerated?.(ticketIndex, dataUrl)
-
-    } catch (error) {
-      console.error(`Failed to retry ticket ${ticketIndex + 1}:`, error)
-
-      setProgress(prev => prev.map(p =>
-        p.index === ticketIndex ? {
-          ...p,
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        } : p
-      ))
-    }
+  const handleCancel = () => {
+    setIsCancelled(true)
+    setIsGenerating(false)
+    onClose()
   }
 
   const progressPercentage = totalTickets > 0 ? ((completedCount + errorCount) / totalTickets) * 100 : 0
@@ -268,18 +284,17 @@ export function ExportProgress({
             {/* Actions */}
             <div className="mt-6 flex gap-3">
               <button
-                onClick={onClose}
-                disabled={isGenerating}
-                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleCancel}
+                className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
-                Cancel
+                {isGenerating ? 'Cancel' : 'Close'}
               </button>
-              {!isGenerating && (
+              {!isGenerating && completedCount > 0 && (
                 <button
                   onClick={onClose}
                   className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                 >
-                  Close
+                  Done
                 </button>
               )}
             </div>
