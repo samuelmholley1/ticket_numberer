@@ -615,6 +615,32 @@ export function NumberingPreview({
               <fieldset className="grid grid-cols-2 gap-4">
                 <legend className="sr-only">Ticket Numbering Settings</legend>
 
+                {/* Border color - only shown in edit mode */}
+                {isEditingLocation && (
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="border-color"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Number Box Border Color
+                    </label>
+                    <input
+                      id="border-color"
+                      type="color"
+                      value={settings.borderColor}
+                      onChange={(e) => setSettings(prev => ({ ...prev, borderColor: e.target.value }))}
+                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      aria-describedby="border-color-help"
+                    />
+                    <div id="border-color-help" className="sr-only">
+                      Color of the dashed border around the number when positioning it on your ticket
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Change the color of the dashed border that appears around the number when editing its position
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label 
                     htmlFor="start-number" 
@@ -774,25 +800,6 @@ export function NumberingPreview({
                   </div>
                 </div>
 
-                <div>
-                  <label 
-                    htmlFor="border-color" 
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Border Color
-                  </label>
-                  <input
-                    id="border-color"
-                    type="color"
-                    value={settings.borderColor}
-                    onChange={(e) => setSettings(prev => ({ ...prev, borderColor: e.target.value }))}
-                    className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    aria-describedby="border-color-help"
-                  />
-                  <div id="border-color-help" className="sr-only">
-                    Select the color for the positioning border around ticket numbers
-                  </div>
-                </div>
               </fieldset>
 
               {/* Summary */}
