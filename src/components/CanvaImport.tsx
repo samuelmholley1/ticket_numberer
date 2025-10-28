@@ -8,6 +8,7 @@ interface CanvaImportProps {
   imageDimensions: { width: number; height: number } | null
   numberPosition: { fx: number; fy: number }
   onPositionChange: (position: { fx: number; fy: number }) => void
+  previewDataUrl: string | null
 }
 
 type UploadState = 'idle' | 'uploading' | 'processing' | 'error' | 'success'
@@ -23,6 +24,7 @@ export function CanvaImport({
   imageDimensions,
   numberPosition,
   onPositionChange,
+  previewDataUrl,
 }: CanvaImportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
@@ -313,12 +315,18 @@ export function CanvaImport({
           </div>
 
           <div className="relative inline-block border rounded-lg overflow-hidden">
-            <img
-              ref={imageRef}
-              src={uploadedImage}
-              alt="Canva design"
-              className="max-w-full h-auto"
-            />
+            {previewDataUrl ? (
+              <img
+                ref={imageRef}
+                src={previewDataUrl}
+                alt="Numbered ticket preview"
+                className="max-w-full h-auto"
+              />
+            ) : (
+              <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                <div className="text-gray-500">Generating preview...</div>
+              </div>
+            )}
             {/* Position marker removed - positioning happens in the modal editor */}
           </div>
         </div>

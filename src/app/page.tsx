@@ -247,6 +247,7 @@ export default function TicketBuilder() {
             imageDimensions={imageDimensions}
             numberPosition={numberPosition}
             onPositionChange={setNumberPosition}
+            previewDataUrl={previewDataUrl}
           />
 
           {uploadedImage && (
@@ -302,31 +303,7 @@ export default function TicketBuilder() {
             </div>
           )}
 
-          {/* Preview Section */}
-          {uploadedImage && imageDimensions && (
-            <div className="bg-white rounded-lg shadow p-6 space-y-4">
-              <h3 className="text-lg font-semibold">Position Preview</h3>
-              <div className="text-sm text-gray-600">
-                Here&apos;s how ticket #001 will look with the current position:
-              </div>
-              <div className="relative border rounded-lg overflow-hidden mx-auto max-w-xs">
-                {previewDataUrl ? (
-                  <img
-                    src={previewDataUrl}
-                    alt="Ticket preview"
-                    className="w-full h-auto"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-                    <div className="text-gray-500">Generating preview...</div>
-                  </div>
-                )}
-              </div>
-              <div className="text-xs text-gray-500 text-center">
-                {imageDimensions.width}×{imageDimensions.height}px • Position: ({Math.round(numberPosition.fx * 100)}%, {Math.round(numberPosition.fy * 100)}%)
-              </div>
-            </div>
-          )}
+          {/* Preview Section - REMOVED, now shown in CanvaImport */}
         </div>
       </div>
 
