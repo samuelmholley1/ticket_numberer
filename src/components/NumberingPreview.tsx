@@ -513,32 +513,31 @@ export function NumberingPreview({
                           >
                             {/* Main number box - NO white background, NO size change */}
                             <div 
-                              className="font-bold border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
+                              className="border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
                               style={{
                                 fontSize: `${settings.fontSize}px`,
                                 fontFamily: settings.fontFamily,
                                 color: settings.fontColor,
                                 whiteSpace: 'nowrap',
-                                backgroundColor: 'transparent'
+                                backgroundColor: 'transparent',
+                                fontWeight: 'normal',
+                                lineHeight: '1'
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
 
-                            {/* Drag indicator emoji - positioned to stay visible */}
+                            {/* Drag indicator hand cursor - positioned outside textbox */}
                             <div
-                              className="absolute text-xl pointer-events-none select-none"
+                              className="absolute pointer-events-none select-none"
                               style={{
-                                left: (dragPosition?.fx ?? settings.fx) > 0.7 ? '-30px' : (dragPosition?.fx ?? settings.fx) < 0.3 ? '30px' : '0',
-                                top: (dragPosition?.fy ?? settings.fy) > 0.7 ? '-30px' : (dragPosition?.fy ?? settings.fy) < 0.3 ? '30px' : '0',
-                                width: '24px',
-                                height: '24px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
+                                left: (dragPosition?.fx ?? settings.fx) > 0.7 ? '-28px' : (dragPosition?.fx ?? settings.fx) < 0.3 ? '28px' : 'auto',
+                                right: (dragPosition?.fx ?? settings.fx) > 0.7 ? 'auto' : (dragPosition?.fx ?? settings.fx) < 0.3 ? 'auto' : '50%',
+                                top: (dragPosition?.fy ?? settings.fy) > 0.7 ? '-28px' : (dragPosition?.fy ?? settings.fy) < 0.3 ? '28px' : '-28px',
+                                fontSize: '20px'
                               }}
                             >
-                              ⋮⋮
+                              👆
                             </div>
                           </div>
                         )}
