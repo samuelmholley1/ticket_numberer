@@ -509,7 +509,7 @@ export function NumberingPreview({
                               top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
                               transform: 'translate(-50%, -50%)',
                               zIndex: 10,
-                              cursor: 'grab'
+                              cursor: isDragging ? 'grabbing' : 'grab'
                             }}
                           >
                             {/* Main number box - same size as rendered preview */}
@@ -527,6 +527,23 @@ export function NumberingPreview({
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                            </div>
+
+                            {/* Hand cursor indicator - visible before and after dragging */}
+                            <div
+                              className="absolute pointer-events-none select-none"
+                              style={{
+                                // Horizontal positioning: opposite side if near left/right border
+                                left: (dragPosition?.fx ?? settings.fx) < 0.25 ? '28px' : 'auto',
+                                right: (dragPosition?.fx ?? settings.fx) > 0.75 ? '28px' : 'auto',
+                                // Vertical positioning: opposite side if near top/bottom border
+                                top: (dragPosition?.fy ?? settings.fy) > 0.75 ? '-28px' : '28px',
+                                fontSize: `${16 * (imageHeight / imgHeight)}px`,
+                                lineHeight: '1',
+                                fontWeight: 'normal'
+                              }}
+                            >
+                              ✋
                             </div>
                           </div>
                         )}
