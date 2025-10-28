@@ -52,6 +52,21 @@ export function NumberingPreview({
   // Get actual image dimensions or use defaults
   const imgWidth = imageDimensions?.width || 600
   const imgHeight = imageDimensions?.height || 1500
+
+  // Helper function to estimate ZIP file size based on image dimensions and count
+  const estimateZipSize = (count: number, width: number, height: number): number => {
+    // Canvas rendering typically uses RGBA (4 bytes per pixel)
+    // But PNG compression typically achieves 10-30% of raw size depending on image complexity
+    const rawPixels = width * height * 4 // RGBA bytes
+    const compressedTicket = rawPixels * 0.15 // Assume 15% compression ratio for PNG
+    const totalBytes = compressedTicket * count
+    
+    // Add ~5KB for metadata, ZIP headers, etc.
+    const overhead = 5 * 1024 * count
+    const totalWithOverhead = totalBytes + overhead
+    
+    return Math.round(totalWithOverhead / (1024 * 1024)) // Convert to MB
+  }
   
   const [settings, setSettings] = useState<ExportSettings>({
     startNumber: 1,
@@ -736,7 +751,7 @@ export function NumberingPreview({
                 <div className="text-sm text-gray-600">
                   <div>Tickets to generate: {ticketCount}</div>
                   <div>Number range: {formatTicketNumber(settings.startNumber, settings.numberFormat)} - {formatTicketNumber(settings.startNumber + ticketCount - 1, settings.numberFormat)}</div>
-                  <div>Estimated ZIP size: ~{Math.round((ticketCount * 150) / 1024)}MB</div>
+                  <div>Estimated ZIP size: ~{estimateZipSize(ticketCount, imgWidth, imgHeight)}MB</div>
                 </div>
               </div>
             </div>
