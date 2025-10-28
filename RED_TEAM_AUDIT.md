@@ -355,8 +355,8 @@ if (value > 120) {
 
 ## 📈 PROGRESS TRACKING
 
-**Last Updated:** October 28, 2025
-**Overall Status:** 🟡 IN PROGRESS (10/10 original + 1 new post-launch UX bug = 91% READY)
+**Last Updated:** October 28, 2025 (Updated with Issue #11)
+**Overall Status:** 🟡 IN PROGRESS (10/10 original + 1 new post-launch UX bug, 75% of new issue fixed)
 
 ### Completed Fixes
 - [x] Input validation
@@ -376,36 +376,30 @@ if (value > 120) {
 
 ## 🟡 POST-LAUNCH ISSUES (Found During Testing)
 
-### Issue #11: Edit Mode UI Broken 🔴 IN PROGRESS
+### Issue #11: Edit Mode UI Broken � PARTIALLY FIXED
 **Severity:** HIGH - Blocks core functionality
 **Location:** `src/components/NumberingPreview.tsx`
 
 **Issues Found During Preview Testing:**
-1. **Number size doubles** when clicking "Edit Number Location" - should stay same size
-2. **White fade/overlay appears** on number text box - should have no white background
-3. **No drag indicator emoji** - user can't tell where to click/drag
-4. **Image fades when dragging** across certain areas - entire ticket fades when dragging number to opposite side from where it started
+1. ✅ **Number size doubles** - FIXED: Removed px-3 py-2, now px-1 py-0.5, consistent size
+2. ✅ **White fade/overlay appears** - FIXED: Removed bg-white bg-opacity-90
+3. ✅ **No drag indicator emoji** - FIXED: Added ⋮⋮ emoji with dynamic positioning
+4. 🟡 **Image fades when dragging** - IN PROGRESS: Need to debug opacity/filter during drag
 
-**Expected Behavior:**
-- When clicking "Edit Number Location": ONLY the dashed border appears around number
-- Number size, color, and styling should NOT change
-- Drag indicator emoji should appear (↔️ or ⋯ or similar) positioned dynamically:
-  - If number is on left → emoji on right
-  - If number is on right → emoji on left
-  - If number is on top → emoji on bottom
-  - If number is on bottom → emoji on top
-  - Emoji position adjusts to stay visible within ticket bounds
-- Dragging anywhere should NOT fade the image - stays crystal clear always
+**Partial Fix Applied:**
+- Removed `bg-white bg-opacity-90` that caused white fade
+- Removed `text-gray-900` to use actual color setting  
+- Added dynamic drag indicator emoji (⋮⋮) that positions outside border
+- Emoji position adjusts to stay visible based on number position:
+  - Right side emoji if number on left
+  - Left side emoji if number on right
+  - Bottom emoji if number on top
+  - Top emoji if number on bottom
+- Reduced padding (px-1 py-0.5) to prevent size increase
+- Image stays at opacity: 1 with filter: 'none' always
 
-**Current Broken Behavior:**
-- Number gets bigger (size change)
-- White fade appears in text box
-- No visual indicator for where to drag
-- Image opacity changes based on drag direction
-
-**Fix Required:**
-- Remove any Tailwind classes causing size/styling changes on edit mode toggle
-- Remove white background and fade effects
-- Add dynamic emoji indicator positioned relative to number position
-- Ensure no image opacity/filter changes during any drag operation
+**Still Debugging:**
+- Image fading occurs when dragging across certain areas
+- May be related to specific Tailwind classes or CSS interactions
+- Need to test with current version to confirm remaining issue
 <parameter name="filePath">/Users/samuelholley/Projects/ticket_numberer/RED_TEAM_AUDIT.md
