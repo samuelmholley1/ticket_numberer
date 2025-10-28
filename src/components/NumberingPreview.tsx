@@ -531,7 +531,9 @@ export function NumberingPreview({
 
                             {/* Grab cursor indicator - only visible when not dragging */}
                             {!isDragging && (
-                              <div
+                              <img
+                                src="/pointinghand_100160.svg"
+                                alt="Click to position"
                                 className="absolute pointer-events-none select-none"
                                 style={{
                                   // Position right at the border edge, touching it
@@ -540,11 +542,6 @@ export function NumberingPreview({
                                   transform: 'translateY(-50%)',
                                   width: `${48 * (imageHeight / imgHeight)}px`,
                                   height: `${56 * (imageHeight / imgHeight)}px`,
-                                  cursor: 'grab',
-                                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath d='M9 8c0-1 1-2 2-2s2 1 2 2v4h-4V8zm4 0c0-1 1-2 2-2s2 1 2 2v6h-4V8zm4 2c0-1 1-2 2-2s2 1 2 2v7h-4v-7zm-12 6c0-1 1-2 2-2s2 1 2 2v7h-4v-7zM8 6c0-1-1-2-2-2s-2 1-2 2v9h4V6z' fill='white' stroke='%23333' stroke-width='0.5'/%3E%3C/svg%3E")`,
-                                  backgroundSize: 'contain',
-                                  backgroundRepeat: 'no-repeat',
-                                  backgroundPosition: 'center',
                                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))'
                                 }}
                               />
