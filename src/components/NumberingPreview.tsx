@@ -340,7 +340,7 @@ export function NumberingPreview({
                   <div 
                     ref={previewImageRef}
                     className="border rounded-lg bg-gray-50 flex items-center justify-center relative"
-                    style={{ cursor: isDragging ? 'none' : 'crosshair' }}
+                    style={{ cursor: isEditingLocation ? 'crosshair' : 'default' }}
                     onClick={isEditingLocation ? handlePreviewClick : undefined}
                     onMouseDown={isEditingLocation ? () => setIsDragging(true) : undefined}
                     onMouseUp={handleMouseUp}
@@ -391,15 +391,9 @@ export function NumberingPreview({
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
-                            {isDragging ? (
-                              <div className="text-sm font-bold text-gray-900">
-                                {formatTicketNumber(settings.startNumber, settings.numberFormat)}
-                              </div>
-                            ) : (
-                              <div className="text-sm font-bold text-gray-900 border-2 border-dashed border-gray-400 px-3 py-2 rounded">
-                                {formatTicketNumber(settings.startNumber, settings.numberFormat)}
-                              </div>
-                            )}
+                            <div className="text-sm font-bold text-gray-900 border-2 border-dashed border-gray-400 px-3 py-2 rounded bg-transparent">
+                              {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                            </div>
                           </div>
                         )}
                       </>

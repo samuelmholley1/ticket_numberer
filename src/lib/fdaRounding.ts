@@ -4,7 +4,7 @@
  * Implements rounding rules per 21 CFR 101.9
  * https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9
  * 
- * All functions return formatted strings for display on nutrition labels.
+ * All functions return formatted strings for display in ticket numbering applications.
  */
 
 /**

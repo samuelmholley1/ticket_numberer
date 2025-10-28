@@ -176,7 +176,7 @@ export async function createSubRecipe(subRecipe: SubRecipeWithUSDA): Promise<{ i
     servingsPerRecipe: Math.max(1, Math.round(totalWeight / 100)),
     nutritionProfile,
     category: 'Component',
-    notes: `Auto-created from smart recipe importer`,
+    notes: `Auto-created from ticket numbering tool`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -582,7 +582,7 @@ export async function createFinalDish(
     servingsPerContainer: finalServingsCount,
     nutritionLabel: nutritionProfile, // Per-serving nutrition data
     status: 'Draft', // Airtable field exists (was just empty)
-    notes: 'Created from smart recipe importer',
+    notes: 'Created from ticket numbering tool',
     createdAt: new Date().toISOString()
   }
   
