@@ -450,8 +450,8 @@ export function NumberingPreview({
                   
                   <div 
                     ref={previewImageRef}
-                    className="border rounded-lg bg-gray-50 flex items-center justify-center relative"
-                    style={{ cursor: isEditingLocation ? 'crosshair' : 'default' }}
+                    className="border rounded-lg bg-gray-50 flex items-center justify-center relative overflow-hidden"
+                    style={{ cursor: isEditingLocation ? 'crosshair' : 'default', willChange: 'auto' }}
                     onClick={isEditingLocation ? handlePreviewClick : undefined}
                     onMouseDown={isEditingLocation ? () => setIsDragging(true) : undefined}
                     onMouseUp={handleMouseUp}
@@ -527,13 +527,15 @@ export function NumberingPreview({
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
 
-                            {/* Drag indicator hand cursor - positioned outside textbox */}
+                            {/* Drag indicator hand cursor - positioned outside textbox, opposite to borders */}
                             <div
                               className="absolute pointer-events-none select-none"
                               style={{
-                                left: (dragPosition?.fx ?? settings.fx) > 0.7 ? '-28px' : (dragPosition?.fx ?? settings.fx) < 0.3 ? '28px' : 'auto',
-                                right: (dragPosition?.fx ?? settings.fx) > 0.7 ? 'auto' : (dragPosition?.fx ?? settings.fx) < 0.3 ? 'auto' : '50%',
-                                top: (dragPosition?.fy ?? settings.fy) > 0.7 ? '-28px' : (dragPosition?.fy ?? settings.fy) < 0.3 ? '28px' : '-28px',
+                                // Horizontal positioning: opposite side if near left/right border
+                                left: (dragPosition?.fx ?? settings.fx) < 0.25 ? '28px' : 'auto',
+                                right: (dragPosition?.fx ?? settings.fx) > 0.75 ? '28px' : 'auto',
+                                // Vertical positioning: opposite side if near top/bottom border
+                                top: (dragPosition?.fy ?? settings.fy) > 0.75 ? '-28px' : '28px',
                                 fontSize: '20px'
                               }}
                             >
