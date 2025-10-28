@@ -181,11 +181,11 @@ export function CanvaImport({
             <div className="flex items-center gap-4">
               <img
                 src="/AATR_2026_ticket.png"
-                alt="AATR 2026 Ticket Template"
+                alt="An Affair to Remember 2026 Ticket Template"
                 className="w-20 h-12 object-cover rounded border"
               />
               <div className="flex-1">
-                <div className="text-sm text-blue-800 font-medium">AATR 2026 Ticket</div>
+                <div className="text-sm text-blue-800 font-medium">An Affair to Remember 2026 Ticket</div>
                 <div className="text-xs text-blue-600">Pre-designed ticket template ready to number</div>
               </div>
               <button
