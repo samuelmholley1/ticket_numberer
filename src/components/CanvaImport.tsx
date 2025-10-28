@@ -302,7 +302,7 @@ export function CanvaImport({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Design uploaded successfully. Click on the preview to position the ticket number.
+              Design uploaded successfully. Click &quot;Generate&quot; below to open the numbering editor.
             </div>
             <button
               onClick={resetUpload}
@@ -317,34 +317,9 @@ export function CanvaImport({
               ref={imageRef}
               src={uploadedImage}
               alt="Canva design"
-              className="max-w-full h-auto cursor-crosshair"
-              onClick={(e) => {
-                const img = e.currentTarget
-                const rect = img.getBoundingClientRect()
-                const clickX = e.clientX - rect.left
-                const clickY = e.clientY - rect.top
-                
-                // Get natural dimensions
-                const imgW = img.naturalWidth
-                const imgH = img.naturalHeight
-                
-                // Compute contain fit matrix
-                const scale = Math.min(rect.width / imgW, rect.height / imgH)
-                const offsetX = Math.floor((rect.width - imgW * scale) / 2)
-                const offsetY = Math.floor((rect.height - imgH * scale) / 2)
-                
-                // Convert screen click to image coordinates
-                const imgX = (clickX - offsetX) / scale
-                const imgY = (clickY - offsetY) / scale
-                
-                // Store as normalized fractions
-                const fx = imgX / imgW
-                const fy = imgY / imgH
-                
-                onPositionChange({ fx, fy })
-              }}
+              className="max-w-full h-auto"
             />
-            {/* Position marker removed - user should refer to the proper rendered preview below */}
+            {/* Position marker removed - positioning happens in the modal editor */}
           </div>
         </div>
       )}

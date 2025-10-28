@@ -356,7 +356,7 @@ export function NumberingPreview({
                                 {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                               </div>
                             ) : (
-                              <div className="text-sm font-bold text-transparent border-2 border-dashed border-gray-400 px-3 py-2 rounded">
+                              <div className="text-sm font-bold text-gray-900 border-2 border-dashed border-gray-400 px-3 py-2 rounded">
                                 {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                               </div>
                             )}
