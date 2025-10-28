@@ -21,6 +21,34 @@ export default function TicketBuilder() {
   const [count, setCount] = useState(3)
   const [numberFormat, setNumberFormat] = useState('001')
 
+  // Load saved preferences on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ticketBuilderPreferences')
+      if (saved) {
+        const prefs = JSON.parse(saved)
+        if (prefs.numberPosition) setNumberPosition(prefs.numberPosition)
+        if (prefs.count) setCount(prefs.count)
+        if (prefs.numberFormat) setNumberFormat(prefs.numberFormat)
+      }
+    } catch (error) {
+      console.error('Failed to load preferences:', error)
+    }
+  }, [])
+
+  // Save preferences whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('ticketBuilderPreferences', JSON.stringify({
+        numberPosition,
+        count,
+        numberFormat
+      }))
+    } catch (error) {
+      console.error('Failed to save preferences:', error)
+    }
+  }, [numberPosition, count, numberFormat])
+
   // Generate preview when image or position changes
   useEffect(() => {
     if (uploadedImage && imageDimensions) {
