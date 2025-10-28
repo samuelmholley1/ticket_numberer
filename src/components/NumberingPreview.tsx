@@ -203,6 +203,39 @@ export function NumberingPreview({
     setDragPosition({ fx, fy })
   }
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isEditingLocation) return
+    setIsDragging(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !isEditingLocation || !previewImageRef.current) return
+    
+    const rect = previewImageRef.current.getBoundingClientRect()
+    const touch = e.touches[0]
+    const x = touch.clientX - rect.left
+    const y = touch.clientY - rect.top
+    
+    // Clamp to bounds
+    const fx = Math.max(0, Math.min(1, x / rect.width))
+    const fy = Math.max(0, Math.min(1, y / rect.height))
+    
+    // Update temporary drag position for live preview
+    setDragPosition({ fx, fy })
+    
+    // Prevent default to avoid scroll
+    e.preventDefault()
+  }
+
+  const handleTouchEnd = () => {
+    if (isDragging && isEditingLocation && dragPosition) {
+      // Apply the final drag position to settings
+      setSettings(prev => ({ ...prev, fx: dragPosition.fx, fy: dragPosition.fy }))
+      setDragPosition(null)
+    }
+    setIsDragging(false)
+  }
+
   const handleMouseUp = () => {
     if (isDragging && isEditingLocation && dragPosition) {
       // Apply the final drag position to settings
@@ -346,9 +379,13 @@ export function NumberingPreview({
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handlePreviewDrag}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchEnd}
                     role={isEditingLocation ? "button" : "img"}
                     tabIndex={isEditingLocation ? 0 : -1}
-                    aria-label={isEditingLocation ? "Click to position ticket number on template" : "Ticket preview"}
+                    aria-label={isEditingLocation ? "Click or tap to position ticket number on template" : "Ticket preview"}
                     aria-describedby={isEditingLocation ? "preview-position-help" : undefined}
                     onKeyDown={(e) => {
                       if (!isEditingLocation) return
