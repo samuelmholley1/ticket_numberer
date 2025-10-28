@@ -376,30 +376,24 @@ if (value > 120) {
 
 ## 🟡 POST-LAUNCH ISSUES (Found During Testing)
 
-### Issue #11: Edit Mode UI Broken � PARTIALLY FIXED
+### Issue #11: Edit Mode UI Broken ✅ FULLY RESOLVED
 **Severity:** HIGH - Blocks core functionality
 **Location:** `src/components/NumberingPreview.tsx`
 
 **Issues Found During Preview Testing:**
-1. ✅ **Number size doubles** - FIXED: Removed px-3 py-2, now px-1 py-0.5, consistent size
+1. ✅ **Number size doubles** - FIXED: Exact preview scaling with `fontSize * (imageHeight / imgHeight)`
 2. ✅ **White fade/overlay appears** - FIXED: Removed bg-white bg-opacity-90
-3. ✅ **No drag indicator emoji** - FIXED: Added ⋮⋮ emoji with dynamic positioning
-4. 🟡 **Image fades when dragging** - IN PROGRESS: Need to debug opacity/filter during drag
+3. ✅ **No drag indicator emoji** - FIXED: Added white pointing hand SVG with smart positioning
+4. ✅ **Image fades when dragging** - FIXED: Added overflow: hidden and GPU rendering hints
 
-**Partial Fix Applied:**
-- Removed `bg-white bg-opacity-90` that caused white fade
-- Removed `text-gray-900` to use actual color setting  
-- Added dynamic drag indicator emoji (⋮⋮) that positions outside border
-- Emoji position adjusts to stay visible based on number position:
-  - Right side emoji if number on left
-  - Left side emoji if number on right
-  - Bottom emoji if number on top
-  - Top emoji if number on bottom
-- Reduced padding (px-1 py-0.5) to prevent size increase
-- Image stays at opacity: 1 with filter: 'none' always
+**Complete Fix Applied (Milestone: commit c923bb4):**
+- **Exact preview scaling**: Number renders at exact same size as final output using `fontSize * (imageHeight / imgHeight)`
+- **Bold text consistency**: Number renders with `fontWeight: 'bold'` matching preview
+- **White pointing hand**: Replaced emoji with proper SVG cursor positioned outside border
+- **Smart positioning**: Hand jumps to opposite side when near edges to avoid cutoff
+- **Image stability**: Added `overflow: hidden` and `will-change: auto` to prevent fading artifacts
+- **User-configurable border**: Added border color picker for customization (nice-to-have optimization)
 
-**Still Debugging:**
-- Image fading occurs when dragging across certain areas
-- May be related to specific Tailwind classes or CSS interactions
-- Need to test with current version to confirm remaining issue
+**Resolution Confirmed:**
+All UX/UI issues in edit mode are now resolved. Users can see realistic previews before saving, drag indicators are intuitive, and no visual artifacts occur during interaction.
 <parameter name="filePath">/Users/samuelholley/Projects/ticket_numberer/RED_TEAM_AUDIT.md
