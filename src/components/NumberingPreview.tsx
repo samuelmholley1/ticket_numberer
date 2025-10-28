@@ -501,7 +501,7 @@ export function NumberingPreview({
                         />
                         
                         {/* Dynamic number overlay - visible in edit mode (both when idle and dragging) */}
-                        {isEditingLocation && (
+                        {isEditingLocation && previewImageRef.current && (
                           <div
                             className="absolute pointer-events-auto select-none"
                             style={{
@@ -512,11 +512,12 @@ export function NumberingPreview({
                               cursor: 'grab'
                             }}
                           >
-                            {/* Main number box - scaled down to 60% for realistic preview in edit mode */}
+                            {/* Main number box - same size as rendered preview */}
                             <div 
                               className="border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
                               style={{
-                                fontSize: `${settings.fontSize * 0.6}px`,
+                                // Scale based on preview container size vs actual image dimensions
+                                fontSize: `${settings.fontSize * (imageHeight / imgHeight)}px`,
                                 fontFamily: settings.fontFamily,
                                 color: settings.fontColor,
                                 whiteSpace: 'nowrap',
