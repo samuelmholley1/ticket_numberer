@@ -511,16 +511,34 @@ export function NumberingPreview({
                               zIndex: 10
                             }}
                           >
+                            {/* Main number box - NO white background, NO size change */}
                             <div 
-                              className="font-bold text-gray-900 border-2 border-dashed border-blue-500 px-3 py-2 rounded bg-white bg-opacity-90"
+                              className="font-bold border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
                               style={{
                                 fontSize: `${settings.fontSize}px`,
                                 fontFamily: settings.fontFamily,
                                 color: settings.fontColor,
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                backgroundColor: 'transparent'
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
+                            </div>
+
+                            {/* Drag indicator emoji - positioned to stay visible */}
+                            <div
+                              className="absolute text-xl pointer-events-none select-none"
+                              style={{
+                                left: (dragPosition?.fx ?? settings.fx) > 0.7 ? '-30px' : (dragPosition?.fx ?? settings.fx) < 0.3 ? '30px' : '0',
+                                top: (dragPosition?.fy ?? settings.fy) > 0.7 ? '-30px' : (dragPosition?.fy ?? settings.fy) < 0.3 ? '30px' : '0',
+                                width: '24px',
+                                height: '24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              ⋮⋮
                             </div>
                           </div>
                         )}
