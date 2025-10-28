@@ -307,7 +307,7 @@ export default function TicketBuilder() {
             <div className="bg-white rounded-lg shadow p-6 space-y-4">
               <h3 className="text-lg font-semibold">Position Preview</h3>
               <div className="text-sm text-gray-600">
-                Click on the design above to position the ticket numbers. Here&apos;s how ticket #001 will look:
+                Here&apos;s how ticket #001 will look with the current position:
               </div>
               <div className="relative border rounded-lg overflow-hidden mx-auto max-w-xs">
                 {previewDataUrl ? (
