@@ -276,7 +276,6 @@ export function NumberingPreview({
               <div className="flex gap-4 items-start">
                 {/* Y-axis slider on the left - aligned with image */}
                 <div className="flex flex-col items-center gap-2" style={{ marginTop: `${imageTop}px` }}>
-                  <span className="text-xs font-medium text-gray-700 mb-1">Position Y</span>
                   <input
                     type="range"
                     min="0"
@@ -288,7 +287,8 @@ export function NumberingPreview({
                     style={{ WebkitAppearance: 'slider-vertical' as any, width: '20px', height: `${imageHeight}px` }}
                     disabled={!isEditingLocation}
                   />
-                  <span className="text-xs text-gray-500 mt-1">{Math.round(settings.fy * 100)}%</span>
+                  <span className="text-xs font-medium text-gray-700 mt-1">Position Y</span>
+                  <span className="text-xs text-gray-500">{Math.round(settings.fy * 100)}%</span>
                   
                   {/* Numeric input for precise positioning */}
                   {isEditingLocation && (
@@ -331,9 +331,15 @@ export function NumberingPreview({
                         <img
                           src={previewDataUrl}
                           alt="Ticket preview"
-                          className="w-full h-auto object-contain pointer-events-none"
+                          className={`w-full h-auto object-contain pointer-events-none transition-opacity ${isDragging ? 'opacity-30' : ''}`}
                           style={{ maxHeight: '60vh' }}
                         />
+                        
+                        {/* Dimming overlay during drag to hide baked-in number */}
+                        {isDragging && (
+                          <div className="absolute inset-0 bg-white bg-opacity-60 pointer-events-none" />
+                        )}
+                        
                         {/* Position indicator - transparent text box with outline */}
                         {!isDragging && isEditingLocation && (
                           <div
@@ -360,7 +366,7 @@ export function NumberingPreview({
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
-                            <span className="text-sm font-bold text-gray-800 bg-white bg-opacity-50 px-2 py-1 rounded">
+                            <span className="text-xl font-bold text-gray-900 bg-white px-3 py-2 rounded shadow-lg border-2 border-blue-500">
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </span>
                           </div>
