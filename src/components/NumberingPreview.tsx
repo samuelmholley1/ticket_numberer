@@ -512,7 +512,7 @@ export function NumberingPreview({
                               cursor: isDragging ? 'grabbing' : 'grab'
                             }}
                           >
-                            {/* Main number box - same size as rendered preview */}
+                            {/* Main number box - renders exactly like preview (bold) */}
                             <div 
                               className="border-2 border-dashed border-blue-500 px-1 py-0.5 rounded"
                               style={{
@@ -522,28 +522,29 @@ export function NumberingPreview({
                                 color: settings.fontColor,
                                 whiteSpace: 'nowrap',
                                 backgroundColor: 'transparent',
-                                fontWeight: 'normal',
+                                fontWeight: 'bold',
                                 lineHeight: '1'
                               }}
                             >
                               {formatTicketNumber(settings.startNumber, settings.numberFormat)}
                             </div>
 
-                            {/* Hand cursor indicator - visible before and after dragging */}
+                            {/* White cursor hand - positioned at border, right-touching */}
                             <div
                               className="absolute pointer-events-none select-none"
                               style={{
-                                // Horizontal positioning: opposite side if near left/right border
-                                left: (dragPosition?.fx ?? settings.fx) < 0.25 ? '28px' : 'auto',
-                                right: (dragPosition?.fx ?? settings.fx) > 0.75 ? '28px' : 'auto',
-                                // Vertical positioning: opposite side if near top/bottom border
-                                top: (dragPosition?.fy ?? settings.fy) > 0.75 ? '-28px' : '28px',
-                                fontSize: `${16 * (imageHeight / imgHeight)}px`,
+                                // Position right at the border edge
+                                right: '-12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: `${18 * (imageHeight / imgHeight)}px`,
                                 lineHeight: '1',
-                                fontWeight: 'normal'
+                                fontWeight: 'normal',
+                                textShadow: '0 0 2px rgba(255,255,255,0.8)',
+                                filter: 'brightness(1.1) drop-shadow(0 0 1px rgba(0,0,0,0.3))'
                               }}
                             >
-                              ✋
+                              ☝️
                             </div>
                           </div>
                         )}
