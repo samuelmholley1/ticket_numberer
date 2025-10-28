@@ -347,8 +347,8 @@ export function NumberingPreview({
                           <div
                             className="absolute pointer-events-none"
                             style={{
-                              left: `${(dragPosition?.fx ?? settings.fx) * 100}%`,
-                              top: `${(dragPosition?.fy ?? settings.fy) * 100}%`,
+                              left: `${Math.max(10, Math.min(90, (dragPosition?.fx ?? settings.fx) * 100))}%`,
+                              top: `${Math.max(10, Math.min(90, (dragPosition?.fy ?? settings.fy) * 100))}%`,
                               transform: 'translate(-50%, -50%)'
                             }}
                           >
