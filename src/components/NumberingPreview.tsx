@@ -186,7 +186,7 @@ export function NumberingPreview({
   }
 
   const handlePreviewDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || !previewImageRef.current) return
+    if (!isDragging || !isEditingLocation || !previewImageRef.current) return
     
     const rect = previewImageRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -201,7 +201,7 @@ export function NumberingPreview({
   }
 
   const handleMouseUp = () => {
-    if (isDragging && dragPosition) {
+    if (isDragging && isEditingLocation && dragPosition) {
       // Apply the final drag position to settings
       setSettings(prev => ({ ...prev, fx: dragPosition.fx, fy: dragPosition.fy }))
       setDragPosition(null)
@@ -295,11 +295,21 @@ export function NumberingPreview({
 
                 {/* Preview image with click/drag positioning */}
                 <div className="flex-1">
+                  {/* Edit/Save Location Button - moved above ticket */}
+                  <div className="mb-4 flex justify-center">
+                    <button
+                      onClick={() => setIsEditingLocation(!isEditingLocation)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    >
+                      {isEditingLocation ? 'Save Location' : 'Edit Number Location'}
+                    </button>
+                  </div>
+                  
                   <div 
                     ref={previewImageRef}
                     className="border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative cursor-crosshair"
-                    onClick={handlePreviewClick}
-                    onMouseDown={() => setIsDragging(true)}
+                    onClick={isEditingLocation ? handlePreviewClick : undefined}
+                    onMouseDown={isEditingLocation ? () => setIsDragging(true) : undefined}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handlePreviewDrag}
@@ -311,9 +321,9 @@ export function NumberingPreview({
                       </div>
                     ) : previewDataUrl ? (
                       <>
-                        {/* In edit mode: show base image with dynamic overlay. In saved mode: show rendered preview */}
+                        {/* Always show the rendered preview ticket */}
                         <img
-                          src={isEditingLocation ? imageSrc : previewDataUrl}
+                          src={previewDataUrl}
                           alt="Ticket preview"
                           className="w-full h-auto object-contain pointer-events-none"
                           style={{ maxHeight: '60vh' }}
@@ -371,16 +381,6 @@ export function NumberingPreview({
                         Failed to generate preview
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Edit/Save Location Button */}
-                  <div className="mt-2 flex justify-center">
-                    <button
-                      onClick={() => setIsEditingLocation(!isEditingLocation)}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                    >
-                      {isEditingLocation ? 'Save Location' : 'Edit Number Location'}
-                    </button>
                   </div>
                   
                   {/* X-axis slider below */}

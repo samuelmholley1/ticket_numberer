@@ -11,8 +11,8 @@ test.describe('Export Tests', () => {
     // In a real scenario, we'd mock file uploads and test the full export flow
 
     // Check that the upload interface is present
-    await expect(page.locator('text=Drop your Canva PNG/JPEG here')).toBeVisible()
-    await expect(page.locator('text=Upload your Canva design and add sequential numbering')).toBeVisible()
+    await expect(page.locator('text=Drop your Canva PNG here')).toBeVisible()
+    await expect(page.locator('text=Upload your Canva design (PNG @ 300 DPI) and add sequential numbering')).toBeVisible()
   })
 
   test('should have proper export settings', async ({ page }) => {

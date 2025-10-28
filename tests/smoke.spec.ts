@@ -13,10 +13,10 @@ test.describe('Smoke Tests', () => {
     await expect(page.locator('text=🎫 Ticket Numberer')).toBeVisible()
 
     // Check that the upload area is present
-    await expect(page.locator('text=Drop your Canva PNG/JPEG here')).toBeVisible()
+    await expect(page.locator('text=Drop your Canva PNG here')).toBeVisible()
 
     // Check that the description is visible
-    await expect(page.locator('text=Upload your Canva design and add sequential numbering')).toBeVisible()
+    await expect(page.locator('text=Upload your Canva design (PNG @ 300 DPI) and add sequential numbering')).toBeVisible()
   })
 
   test('should show preview when image is uploaded', async ({ page }) => {
@@ -28,6 +28,6 @@ test.describe('Smoke Tests', () => {
     // Check that the page has the expected structure
     // The position preview section is always present but shows different content
     await expect(page.locator('text=🎫 Ticket Numberer')).toBeVisible()
-    await expect(page.locator('text=Upload your Canva design and add sequential numbering')).toBeVisible()
+    await expect(page.locator('text=Upload your Canva design (PNG @ 300 DPI) and add sequential numbering')).toBeVisible()
   })
 })

@@ -9,6 +9,7 @@ import { ToastContainer, toast } from '@/components/Toast'
 import { createZipFromDataUrls } from '@/lib/zipExport'
 import { export3UpLetterPDF, export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
 import { exportTicketWithNumber } from '@/lib/zipExport'
+import { renderTicketToDataUrl } from '@/lib/ticketRenderer'
 
 export default function TicketBuilder() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
@@ -16,8 +17,30 @@ export default function TicketBuilder() {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null)
   // Store normalized coordinates (0-1 range) - default to bottom-right for typical ticket numbering
   const [numberPosition, setNumberPosition] = useState<{ fx: number; fy: number }>({ fx: 0.95, fy: 0.94 })
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [count, setCount] = useState(3)
   const [numberFormat, setNumberFormat] = useState('001')
+
+  // Generate preview when image or position changes
+  useEffect(() => {
+    if (uploadedImage && imageDimensions) {
+      renderTicketToDataUrl(uploadedImage, 1, {
+        width: imageDimensions.width,
+        height: imageDimensions.height,
+        fx: numberPosition.fx,
+        fy: numberPosition.fy,
+        fontSize: 48,
+        fontColor: '#000000',
+        fontFamily: 'Arial',
+        numberFormat: '001',
+        startNumber: 1
+      })
+        .then(setPreviewDataUrl)
+        .catch(console.error)
+    } else {
+      setPreviewDataUrl(null)
+    }
+  }, [uploadedImage, imageDimensions, numberPosition])
   const [isExporting, setIsExporting] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [showProgress, setShowProgress] = useState(false)
@@ -287,21 +310,17 @@ export default function TicketBuilder() {
                 Click on the design above to position the ticket numbers. Here&apos;s how ticket #001 will look:
               </div>
               <div className="relative border rounded-lg overflow-hidden mx-auto max-w-xs">
-                <img
-                  src={uploadedImage}
-                  alt="Ticket design"
-                  className="w-full h-auto"
-                />
-                <div
-                  className="absolute text-4xl font-bold text-black bg-white bg-opacity-80 px-2 py-1 rounded pointer-events-none"
-                  style={{
-                    left: `${numberPosition.fx * 100}%`,
-                    top: `${numberPosition.fy * 100}%`,
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                >
-                  001
-                </div>
+                {previewDataUrl ? (
+                  <img
+                    src={previewDataUrl}
+                    alt="Ticket preview"
+                    className="w-full h-auto"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                    <div className="text-gray-500">Generating preview...</div>
+                  </div>
+                )}
               </div>
               <div className="text-xs text-gray-500 text-center">
                 {imageDimensions.width}×{imageDimensions.height}px • Position: ({Math.round(numberPosition.fx * 100)}%, {Math.round(numberPosition.fy * 100)}%)
