@@ -131,7 +131,7 @@ export default function FinalDishesPage() {
                 Final Dishes
               </h1>
               <p className="text-gray-600">
-                Complete menu items with FDA-compliant nutrition labels
+                Complete menu items with professional ticket numbering
               </p>
             </div>
             <Link

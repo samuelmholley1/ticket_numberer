@@ -52,7 +52,7 @@ export default function MobileRestrict({ children, allowViewOnly = false }: Mobi
 
           <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-emerald-900">
-              <strong>💡 Tip:</strong> You can still view your saved recipes and nutrition labels on mobile!
+              <strong>💡 Tip:</strong> You can still view your saved tickets and designs on mobile!
             </p>
           </div>
 
