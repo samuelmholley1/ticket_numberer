@@ -140,12 +140,12 @@ export function CanvaImport({
     setUploadError(null)
 
     try {
-      // Load the template image
-      const response = await fetch('/AATR_2026_ticket.png')
+      // Load the template image - using the updated front ticket
+      const response = await fetch('/12.12.25 AATR 2026 TICKET FRONT.png')
       const blob = await response.blob()
       
       // Create a File object from the blob
-      const templateFile = new File([blob], 'AATR_2026_ticket.png', { type: 'image/png' })
+      const templateFile = new File([blob], '12.12.25 AATR 2026 TICKET FRONT.png', { type: 'image/png' })
       
       // Process it like a regular upload
       await processFile(templateFile)
@@ -180,7 +180,7 @@ export function CanvaImport({
             <h3 id="template-heading" className="text-sm font-medium text-blue-900 mb-2">Quick Start Template</h3>
             <div className="flex items-center gap-4">
               <img
-                src="/AATR_2026_ticket.png"
+                src="/12.12.25 AATR 2026 TICKET FRONT.png"
                 alt="An Affair to Remember 2026 Ticket Template preview"
                 className="w-20 h-12 object-cover rounded border"
               />

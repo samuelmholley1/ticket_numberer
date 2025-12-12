@@ -26,16 +26,19 @@ export function drawTicket(ctx: CanvasRenderingContext2D, params: DrawParams): v
   ctx.clearRect(0, 0, imgW, imgH)
   ctx.drawImage(img, 0, 0, imgW, imgH)
 
-  // Convert normalized position to absolute pixels
-  const x = Math.round(fx * imgW)
-  const y = Math.round(fy * imgH)
+  // Only draw text if it's provided and fontSize > 0
+  if (text && fontPx > 0) {
+    // Convert normalized position to absolute pixels
+    const x = Math.round(fx * imgW)
+    const y = Math.round(fy * imgH)
 
-  // Draw the number
-  ctx.font = `bold ${fontPx}px ${fontFamily}, sans-serif`
-  ctx.fillStyle = color
-  ctx.textBaseline = 'middle'
-  ctx.textAlign = 'center'
-  ctx.fillText(text, x, y)
+    // Draw the number
+    ctx.font = `bold ${fontPx}px ${fontFamily}, sans-serif`
+    ctx.fillStyle = color
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'center'
+    ctx.fillText(text, x, y)
+  }
 }
 
 /**

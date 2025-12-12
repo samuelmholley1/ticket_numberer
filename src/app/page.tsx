@@ -7,7 +7,7 @@ import { ExportProgress } from '@/components/ExportProgress'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ToastContainer, toast } from '@/components/Toast'
 import { createZipFromDataUrls } from '@/lib/zipExport'
-import { export3UpLetterPDF, export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
+import { export3UpLetterPDF, export4UpLetterPDF, export4UpDoubleSidedPDF, export8UpLetterPDF, downloadPDF } from '@/lib/pdfExport'
 import { exportTicketWithNumber } from '@/lib/zipExport'
 import { renderTicketToDataUrl } from '@/lib/ticketRenderer'
 
@@ -137,8 +137,9 @@ export default function TicketBuilder() {
       } else if (exportSettings!.exportFormat === 'pdf') {
         console.log('Creating PDF with', images.length, 'images')
         
-        // Email-friendly batch size: max 50 tickets per PDF (~10-15MB depending on image complexity)
-        const maxTicketsPerBatch = 50
+        // Email-friendly batch size: max 60 tickets per PDF (~10-15MB depending on image complexity)
+        // 4 tickets per page means 15 pages for 60 tickets (30 sheets double-sided)
+        const maxTicketsPerBatch = 60
         const needsBatching = dataUrls.length > maxTicketsPerBatch
         
         if (needsBatching) {
@@ -153,8 +154,9 @@ export default function TicketBuilder() {
             
             console.log(`Generating batch ${batchIndex + 1}/${batches}: tickets ${exportSettings!.startNumber + startTicket}-${exportSettings!.startNumber + endTicket - 1}`)
             
-            const pdfBytes = await export3UpLetterPDF({
+            const pdfBytes = await export4UpDoubleSidedPDF({
               imageSrc: uploadedImage!,
+              backImageSrc: '/12.12.25 AATR 2026 TICKET BACK.png',
               totalTickets: batchSize,
               startNumber: exportSettings!.startNumber + startTicket,
               numberFormat: exportSettings!.numberFormat,
@@ -179,8 +181,9 @@ export default function TicketBuilder() {
           toast.success('Export Complete', `${batches} PDF files downloaded (email-friendly batches of ${maxTicketsPerBatch} tickets each)`)
         } else {
           // Single PDF for smaller batches
-          const pdfBytes = await export3UpLetterPDF({
+          const pdfBytes = await export4UpDoubleSidedPDF({
             imageSrc: uploadedImage!,
+            backImageSrc: '/12.12.25 AATR 2026 TICKET BACK.png',
             totalTickets: dataUrls.length,
             startNumber: exportSettings!.startNumber,
             numberFormat: exportSettings!.numberFormat,
