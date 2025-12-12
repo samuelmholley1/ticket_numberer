@@ -179,14 +179,21 @@ export function CanvaImport({
           <div className="border rounded-lg p-4 bg-blue-50 border-blue-200" role="region" aria-labelledby="template-heading">
             <h3 id="template-heading" className="text-sm font-medium text-blue-900 mb-2">Quick Start Template</h3>
             <div className="flex items-center gap-4">
-              <img
-                src="/12.12.25 AATR 2026 TICKET FRONT.png"
-                alt="An Affair to Remember 2026 Ticket Template preview"
-                className="w-20 h-12 object-cover rounded border"
-              />
+              <div className="flex gap-2">
+                <img
+                  src="/12.12.25 AATR 2026 TICKET FRONT.png"
+                  alt="An Affair to Remember 2026 Ticket Template Front"
+                  className="w-20 h-12 object-cover rounded border"
+                />
+                <img
+                  src="/12.12.25 AATR 2026 TICKET BACK.png"
+                  alt="An Affair to Remember 2026 Ticket Template Back"
+                  className="w-20 h-12 object-cover rounded border"
+                />
+              </div>
               <div className="flex-1">
                 <div className="text-sm text-blue-800 font-medium">An Affair to Remember 2026 Ticket</div>
-                <div className="text-xs text-blue-600">Pre-designed ticket template ready to number</div>
+                <div className="text-xs text-blue-600">Double-sided ticket template • 4 tickets per page • Ready to number & print</div>
               </div>
               <button
                 onClick={handleTemplateSelect}
@@ -199,6 +206,12 @@ export function CanvaImport({
               <div id="template-button-status" className="sr-only" aria-live="polite">
                 {uploadState === 'uploading' || uploadState === 'processing' ? 'Loading template...' : 'Ready to use template'}
               </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <p className="text-xs text-blue-700">
+                <strong>📄 Printing Instructions:</strong> Export as PDF, then print with <strong>duplex (double-sided)</strong> on, flip on <strong>short edge</strong>. 
+                Page 1 = tickets 1-4 front, Page 2 = tickets 1-4 back, Page 3 = tickets 5-8 front, etc.
+              </p>
             </div>
           </div>
 
