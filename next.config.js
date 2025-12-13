@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Generate unique build ID to force cache invalidation
+  generateBuildId: async () => {
+    return `build-${Date.now()}`
+  },
   compiler: {
     // Keep console logs in production for debugging
     // This is a single-user proprietary app, so performance impact is negligible
@@ -10,6 +14,26 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        // Prevent caching of JavaScript bundles
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        // Prevent caching of page HTML
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
       {
         source: '/sw.js',
         headers: [

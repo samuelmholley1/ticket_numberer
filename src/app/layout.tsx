@@ -2,13 +2,18 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { VersionCheck } from '@/components/VersionCheck'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Ticket Numberer - Batch Export Tool',
   description: 'Create and export custom tickets in bulk. Generate PNG, JPEG, and PDF tickets with flexible numbering and professional layouts.',
-  manifest: '/site.webmanifest'
+  manifest: '/site.webmanifest',
+  other: {
+    // Force cache invalidation
+    'cache-control': 'no-cache, no-store, must-revalidate',
+  }
 }
 
 export const viewport: Viewport = {
@@ -28,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <VersionCheck />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
