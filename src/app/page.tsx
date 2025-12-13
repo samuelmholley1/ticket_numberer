@@ -106,6 +106,7 @@ export default function TicketBuilder() {
   }, [])
 
   const handlePreviewConfirm = (settings: ExportSettings) => {
+    console.log('Preview confirmed. Count:', count, 'Settings:', settings)
     setExportSettings(settings)
     setShowProgress(true)
   }
@@ -253,8 +254,11 @@ export default function TicketBuilder() {
       toast.error('No Design', 'Please upload a Canva design first.')
       return
     }
+    console.log('Export button clicked. Count:', count, 'UploadedImage:', !!uploadedImage)
     setShowPreview(true)
   }
+
+  console.log('[Render] count:', count, 'exportSettings:', !!exportSettings, 'showProgress:', showProgress)
 
   return (
     <ErrorBoundary>

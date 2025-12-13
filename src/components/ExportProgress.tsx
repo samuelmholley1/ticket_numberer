@@ -52,6 +52,7 @@ export function ExportProgress({
   const [isCancelled, setIsCancelled] = useState(false)
 
   useEffect(() => {
+    console.log('ExportProgress mounted. isOpen:', isOpen, 'totalTickets:', totalTickets)
     if (isOpen && totalTickets > 0) {
       initializeProgress()
       startGeneration()
