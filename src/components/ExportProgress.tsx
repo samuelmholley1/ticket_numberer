@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { renderTicketToDataUrl, formatTicketNumber } from '@/lib/ticketRenderer'
 
 interface ExportProgressProps {
@@ -50,12 +50,32 @@ export function ExportProgress({
   const [completedCount, setCompletedCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
   const [isCancelled, setIsCancelled] = useState(false)
+  
+  // Use ref to track generated dataUrls to avoid stale state issues
+  const generatedDataUrls = useRef<Map<number, string>>(new Map())
 
   useEffect(() => {
     console.log('ExportProgress mounted. isOpen:', isOpen, 'totalTickets:', totalTickets)
     if (isOpen && totalTickets > 0) {
-      initializeProgress()
-      startGeneration()
+      // Clear previous generation data
+      generatedDataUrls.current.clear()
+      
+      // Initialize progress state
+      const initialProgress: TicketProgress[] = Array.from({ length: totalTickets }, (_, i) => ({
+        index: i,
+        status: 'pending'
+      }))
+      setProgress(initialProgress)
+      setCurrentIndex(0)
+      setCompletedCount(0)
+      setErrorCount(0)
+      setIsCancelled(false)
+      
+      // Start generation in next tick to ensure state is updated
+      setTimeout(() => {
+        console.log('Starting generation with', totalTickets, 'tickets')
+        startGeneration()
+      }, 0)
     }
     return () => {
       setIsCancelled(true)
@@ -135,6 +155,9 @@ export function ExportProgress({
 
         try {
           const dataUrl = await generateTicket(i)
+          
+          // Store in ref for reliable access
+          generatedDataUrls.current.set(i, dataUrl)
 
           // Update progress to completed
           setProgress(prev => prev.map(p =>
@@ -143,6 +166,8 @@ export function ExportProgress({
 
           setCompletedCount(prev => prev + 1)
           onTicketGenerated?.(i, dataUrl)
+          
+          console.log(`Ticket ${i + 1}/${totalTickets} generated`)
 
         } catch (error) {
           if (isCancelled) return
@@ -175,32 +200,36 @@ export function ExportProgress({
 
   const startGeneration = async () => {
     setIsGenerating(true)
+    generatedDataUrls.current.clear()
 
     try {
+      console.log('Starting ticket generation loop...')
       // Process tickets in batches of 5 to prevent UI blocking
       const batchSize = 5
       for (let batchStart = 0; batchStart < totalTickets; batchStart += batchSize) {
         if (isCancelled) break
+        console.log(`Processing batch starting at ${batchStart}`)
         await processBatch(batchStart, batchSize)
       }
 
       if (!isCancelled) {
         setIsGenerating(false)
 
-        // Collect all successfully generated tickets
-        const dataUrls: string[] = progress
-          .filter(p => p.status === 'completed' && p.dataUrl)
-          .map(p => p.dataUrl!)
-          .sort((a, b) => {
-            const indexA = progress.findIndex(p => p.dataUrl === a)
-            const indexB = progress.findIndex(p => p.dataUrl === b)
-            return indexA - indexB
-          })
+        // Collect all successfully generated tickets from ref
+        const dataUrls: string[] = []
+        for (let i = 0; i < totalTickets; i++) {
+          const dataUrl = generatedDataUrls.current.get(i)
+          if (dataUrl) {
+            dataUrls.push(dataUrl)
+          }
+        }
 
         console.log('Generation complete. Total tickets:', dataUrls.length, 'Errors:', errorCount)
         if (dataUrls.length > 0) {
           console.log('Calling onComplete with', dataUrls.length, 'dataUrls')
           onComplete?.(dataUrls)
+        } else {
+          console.error('No tickets were generated successfully!')
         }
       }
     } catch (error) {
