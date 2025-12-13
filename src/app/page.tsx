@@ -28,7 +28,7 @@ export default function TicketBuilder() {
       if (saved) {
         const prefs = JSON.parse(saved)
         if (prefs.numberPosition) setNumberPosition(prefs.numberPosition)
-        if (prefs.count) setCount(prefs.count)
+        if (prefs.count && prefs.count > 0) setCount(prefs.count)
         if (prefs.numberFormat) setNumberFormat(prefs.numberFormat)
       }
     } catch (error) {
@@ -380,7 +380,7 @@ export default function TicketBuilder() {
         numberFormat={numberFormat}
       />
 
-      {exportSettings && (
+      {exportSettings && count > 0 && (
         <ExportProgress
           isOpen={showProgress}
           onClose={() => {
