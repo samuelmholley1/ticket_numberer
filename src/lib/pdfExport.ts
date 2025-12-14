@@ -463,7 +463,7 @@ export async function export4UpDoubleSidedPDF(
   await new Promise<void>((resolve, reject) => {
     backImg.onload = () => resolve()
     backImg.onerror = reject
-    backImg.src = settings.backImageSrc
+    backImg.src = settings.backImageSrc!
   })
   
   backCtx.drawImage(backImg, 0, 0, settings.width, settings.height)
