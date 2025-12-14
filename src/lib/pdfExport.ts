@@ -428,7 +428,8 @@ export async function export4UpDoubleSidedPDF(
 
   console.log(`Margins: X=${marginX.toFixed(2)}pt, Y=${marginY.toFixed(2)}pt, Padding=${paddingBetweenTickets}pt`)
 
-  // Pre-render all front tickets
+  // Pre-render all front tickets with numbering
+  console.log('Rendering front tickets with numbers...')
   const renderedFronts: string[] = []
   for (let i = 0; i < settings.totalTickets; i++) {
     const ticketNumber = settings.startNumber + i
@@ -446,31 +447,28 @@ export async function export4UpDoubleSidedPDF(
     renderedFronts.push(dataUrl)
     
     if (onProgress) {
-      onProgress(i + 1, settings.totalTickets * 2) // *2 because we render both front and back
+      onProgress(i + 1, settings.totalTickets * 2) // *2 because we have both front and back
     }
   }
 
-  // Pre-render all back tickets (no numbering needed on back)
-  const renderedBacks: string[] = []
-  for (let i = 0; i < settings.totalTickets; i++) {
-    // For back, we just render the static image without numbering
-    const dataUrl = await renderTicketToDataUrl(settings.backImageSrc, 0, {
-      width: settings.width,
-      height: settings.height,
-      fx: 0, // No number position needed
-      fy: 0,
-      fontSize: 0, // No number
-      fontColor: settings.fontColor,
-      fontFamily: settings.fontFamily,
-      numberFormat: '',
-      startNumber: 0
-    })
-    renderedBacks.push(dataUrl)
-    
-    if (onProgress) {
-      onProgress(settings.totalTickets + i + 1, settings.totalTickets * 2)
-    }
-  }
+  // Load the back image once and render it to the correct size (no numbering)
+  console.log('Preparing back image (static, no numbering)...')
+  const backImageCanvas = document.createElement('canvas')
+  backImageCanvas.width = settings.width
+  backImageCanvas.height = settings.height
+  const backCtx = backImageCanvas.getContext('2d')!
+  
+  const backImg = new Image()
+  backImg.crossOrigin = 'anonymous'
+  await new Promise<void>((resolve, reject) => {
+    backImg.onload = () => resolve()
+    backImg.onerror = reject
+    backImg.src = settings.backImageSrc
+  })
+  
+  backCtx.drawImage(backImg, 0, 0, settings.width, settings.height)
+  const backDataUrl = backImageCanvas.toDataURL('image/png', 0.98)
+  console.log('Back image prepared')
 
   // Layout tickets on pages (front and back alternating)
   const totalPages = Math.ceil(settings.totalTickets / ticketsPerPage) * 2 // *2 for front and back
@@ -566,7 +564,12 @@ export async function export4UpDoubleSidedPDF(
 
     // BACK PAGE (even page)
     // For duplex printing with flip on short edge, the backs should be in the same position
+    // All backs use the same static image (no numbering)
     const backPage = pdfDoc.addPage([pageWidthPt, pageHeightPt])
+
+    // Embed the back image once per page (it's the same for all tickets)
+    const backImageBytes = await fetch(backDataUrl).then(res => res.arrayBuffer())
+    const backPngImage = await pdfDoc.embedPng(backImageBytes)
 
     for (let i = startTicket; i < endTicket; i++) {
       const positionOnPage = i - startTicket
@@ -575,11 +578,8 @@ export async function export4UpDoubleSidedPDF(
       const x = marginX
       const y = pageHeightPt - marginY - (positionOnPage * (ticketHeightPt + paddingBetweenTickets)) - ticketHeightPt
 
-      // Embed and draw back ticket
-      const pngImageBytes = await fetch(renderedBacks[i]).then(res => res.arrayBuffer())
-      const pngImage = await pdfDoc.embedPng(pngImageBytes)
-
-      backPage.drawImage(pngImage, {
+      // Draw the same back image for each ticket position
+      backPage.drawImage(backPngImage, {
         x,
         y,
         width: ticketWidthPt,
